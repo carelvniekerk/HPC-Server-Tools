@@ -1,0 +1,42 @@
+{
+  "DSML_short": {
+    "queue": "DSML",
+    "ncpus": 2,
+    "ngpus": 1,
+    "memory": 16,
+    "accelerator_model": null,
+    "walltime": "4:00:00"
+  },
+  "DSML_long": {
+    "queue": "DSML",
+    "ncpus": 2,
+    "ngpus": 1,
+    "memory": 16,
+    "accelerator_model": null,
+    "walltime": "48:00:00"
+  },
+  "DSML_short_large": {
+    "queue": "DSML",
+    "ncpus": 2,
+    "ngpus": 1,
+    "memory": 32,
+    "accelerator_model": null,
+    "walltime": "4:00:00"
+  },
+  "DSML_long_large": {
+    "queue": "DSML",
+    "ncpus": 2,
+    "ngpus": 1,
+    "memory": 32,
+    "accelerator_model": null,
+    "walltime": "48:00:00"
+  },
+  "GTX1080_short": {
+    "queue": "",
+    "ncpus": 2,
+    "ngpus": 1,
+    "memory": 32,
+    "accelerator_model": "GTX1080TI",
+    "walltime": "4:00:00"
+  }
+}
