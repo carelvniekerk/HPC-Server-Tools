@@ -72,7 +72,7 @@ def main():
             bashrc = file.readlines()
 
         bashrc.append("\n# User tools for HPC\n")
-        bashrc.append(f"source /gpfs/project/{user_name}/user_tools/.bashrc\n")
+        bashrc.append(f"source /gpfs/project/{user_name}/.usr_tls/.bashrc\n")
 
         with open(bashrc_path, "w") as writer:
             writer.writelines(bashrc)

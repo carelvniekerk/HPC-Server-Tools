@@ -22,7 +22,7 @@
 import os
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-BASHRC_PATH = f"/gpfs/project/{os.environ.get('USER_NAME')}/user_tools/.bashrc"
+BASHRC_PATH = f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/.bashrc"
 
 
 def get_venv_path(path: str) -> str:

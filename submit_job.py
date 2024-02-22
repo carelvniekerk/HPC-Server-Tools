@@ -26,7 +26,7 @@ from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 LOGS_PATH = f"/gpfs/project/{os.environ.get('USER_NAME')}/job_logs/"
 ROOT = f"/gpfs/project/{os.environ.get('USER_NAME')}"
 
-TEMPLATES = f"/gpfs/project/{os.environ.get('USER_NAME')}/user_tools/session_templates.json"
+TEMPLATES = f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/session_templates.json"
 with open(TEMPLATES, 'r') as reader:
     TEMPLATES = json.load(reader)
 

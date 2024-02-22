@@ -23,7 +23,7 @@ import os
 import json
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
-TEMPLATES = f"/gpfs/project/{os.environ.get('USER_NAME')}/user_tools/session_templates.json"
+TEMPLATES = f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/session_templates.json"
 with open(TEMPLATES, 'r') as reader:
     TEMPLATES = json.load(reader)
 
@@ -69,7 +69,7 @@ def main():
 
     command = " ".join(command)
 
-    with open(f'/gpfs/project/{os.environ.get("USER_NAME")}/user_tools/qi.sh', 'w') as writer:
+    with open(f'/gpfs/project/{os.environ.get("USER_NAME")}/.usr_tls/qi.sh', 'w') as writer:
         writer.write(command)
     
 

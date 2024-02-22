@@ -11,14 +11,25 @@ Institution: Heinrich Heine University Düsseldorf
 This repository contains a collection of tools and scripts that are useful for HPC users. The tools are written in Python and Bash. The tools are designed to be easy to use and to be useful for a wide range of users.
 
 ## Installation
+Load the Python module on the HPC system. 
+```bash
+module load Python/3.11.4
+```
+
+Install the required packages. 
+```bash
+pip3 install --user tabulate
+```
+
 Clone the user_tools repository to your home directory on the HPC system. 
 ```bash
-git clone https://gitlab.cs.uni-duesseldorf.de/niekerk/user_tools.git user_tools
+cd /gpfs/project/<user_name>
+git clone https://gitlab.cs.uni-duesseldorf.de/niekerk/user_tools.git .usr_tls
 ```
 
 Run the installation script to install the tools. 
 ```bash
-python3 user_tools/install.py
+python3 .usr_tls/install.py
 ```
 Should you wish to rerun this script at a later time, change the value of the `SETUP_COMPLETE` variable in the `.bashrc file` to `False`.
 

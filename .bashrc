@@ -20,9 +20,9 @@
 # limitations under the License.
 
 # Define user information
-export USER_NAME=niekerk
-export CURRENT_VENV=/gpfs/project/niekerk/src/ConvLab3/.venv/bin/activate
-export SETUP_COMPLETE=True
+export USER_NAME=""
+export CURRENT_VENV=""
+export SETUP_COMPLETE=False
 
 # Aliases for loading modules
 alias base_installers='module load Python/3.11.4 intel/xe2020.4 gcc/11.1.0 SentencePiece/0.1.94 CUDA/11.7.1; module load Python/3.11.4'
@@ -33,13 +33,13 @@ alias hf_offline='export HF_DATASETS_OFFLINE=1; export TRANSFORMERS_OFFLINE=1; e
 alias activate_cur_venv="source $CURRENT_VENV"
 
 # Aliases for user tools
-alias activate="source /gpfs/project/$USER_NAME/user_tools/activate_venv.sh"
-alias qi-setup="python3 /gpfs/project/$USER_NAME/user_tools/get_interactive.py"
-alias qi="source /gpfs/project/$USER_NAME/user_tools/qi.sh"
-alias qs="python3 /gpfs/project/$USER_NAME/user_tools/resource_check.py"
-alias submit_job="python3 /gpfs/project/$USER_NAME/user_tools/submit_job.py"
-alias cleanup_job_logs="python3 /gpfs/project/$USER_NAME/user_tools/cleanup_logs.py"
-alias job_log="python3 /gpfs/project/$USER_NAME/user_tools/job_log.py"
+alias activate="source /gpfs/project/$USER_NAME/.usr_tls/activate_venv.sh"
+alias qi-setup="python3 /gpfs/project/$USER_NAME/.usr_tls/get_interactive.py"
+alias qi="source /gpfs/project/$USER_NAME/.usr_tls/qi.sh"
+alias qs="python3 /gpfs/project/$USER_NAME/.usr_tls/resource_check.py"
+alias submit_job="python3 /gpfs/project/$USER_NAME/.usr_tls/submit_job.py"
+alias cleanup_job_logs="python3 /gpfs/project/$USER_NAME/.usr_tls/cleanup_logs.py"
+alias job_log="python3 /gpfs/project/$USER_NAME/.usr_tls/job_log.py"
 
 # Some alias for convenience:
 alias home="cd /gpfs/project/$USER_NAME"
