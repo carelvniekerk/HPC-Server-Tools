@@ -20,9 +20,9 @@
 # limitations under the License.
 
 # Define user information
-export USER_NAME=""
-export CURRENT_VENV=""
-export SETUP_COMPLETE=False
+export USER_NAME=niekerk
+export CURRENT_VENV=/gpfs/project/niekerk/src/ConvLab3/.venv/bin/activate
+export SETUP_COMPLETE=True
 
 # Aliases for loading modules
 alias base_installers='module load Python/3.11.4 intel/xe2020.4 gcc/11.1.0 SentencePiece/0.1.94 CUDA/11.7.1; module load Python/3.11.4'

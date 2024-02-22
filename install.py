@@ -67,6 +67,16 @@ def main():
         with open(os.path.join(bashrc_path, ".bashrc"), "w") as writer:
             writer.writelines(bashrc)
 
+        bashrc_path = f"/home/{user_name}/.bashrc"
+        with open(bashrc_path, "r") as file:
+            bashrc = file.readlines()
+
+        bashrc.append("\n# User tools for HPC\n")
+        bashrc.append(f"source /gpfs/project/{user_name}/user_tools/.bashrc\n")
+
+        with open(bashrc_path, "w") as writer:
+            writer.writelines(bashrc)
+
         print("Configuration complete. Please restart your terminal to apply changes.")
 
 
