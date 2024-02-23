@@ -22,7 +22,7 @@
 # Define user information
 export USER_NAME=""
 export CURRENT_VENV=""
-export SETUP_COMPLETE=False
+export SETUP_COMPLETE=Frue
 
 # Aliases for loading modules
 alias base_installers='module load Python/3.11.4 intel/xe2020.4 gcc/11.1.0 SentencePiece/0.1.94 CUDA/11.7.1; module load Python/3.11.4'
@@ -30,6 +30,7 @@ alias base='module load Python/3.11.4 CUDA/11.7.1; module load Python/3.11.4'
 
 # Aliases for environment variables
 alias hf_offline='export HF_DATASETS_OFFLINE=1; export TRANSFORMERS_OFFLINE=1; export HF_EVALUATE_OFFLINE=1'
+alias setup_path='export PATH=$PATH:$HOME/.local/bin:$HOME/bin'
 alias activate_cur_venv="source $CURRENT_VENV"
 
 # Aliases for user tools
@@ -49,6 +50,9 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
 alias .....='cd ../../../..'
+alias l.='ls -d .* --color=auto'
+alias ll='ls -l --color=auto'
+alias ls='ls --color=auto'
 
 # Setup command line
 [ -z "$PS1" ] && return
@@ -57,6 +61,7 @@ export PS1="\[\033[34;1m\]\u@\h\[\033[m\]:\[\033[32m\]\[\033[32;1m\]\W\[\033[m\]
 # Load the base environment
 home
 hf_offline
+setup_path
 base
 activate_cur_venv
 qs
