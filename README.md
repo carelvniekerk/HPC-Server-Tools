@@ -24,7 +24,7 @@ pip3 install --user tabulate
 Clone the user_tools repository to your home directory on the HPC system. 
 ```bash
 cd /gpfs/project/<user_name>
-git clone https://gitlab.cs.uni-duesseldorf.de/niekerk/user_tools.git .usr_tls
+git clone https://gitlab.cs.uni-duesseldorf.de/dsml/user_tools.git .usr_tls
 ```
 
 Run the installation script to install the tools. 
