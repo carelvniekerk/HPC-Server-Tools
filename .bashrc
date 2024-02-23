@@ -22,7 +22,7 @@
 # Define user information
 export USER_NAME=""
 export CURRENT_VENV=""
-export SETUP_COMPLETE=Frue
+export SETUP_COMPLETE=False
 
 # Aliases for loading modules
 alias base_installers='module load Python/3.11.4 intel/xe2020.4 gcc/11.1.0 SentencePiece/0.1.94 CUDA/11.7.1; module load Python/3.11.4'
