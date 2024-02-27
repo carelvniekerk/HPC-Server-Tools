@@ -54,9 +54,11 @@ alias l.='ls -d .* --color=auto'
 alias ll='ls -l --color=auto'
 alias ls='ls --color=auto'
 
-# Setup command line
-[ -z "$PS1" ] && return
-export PS1="\[\033[34;1m\]\u@\h\[\033[m\]:\[\033[32m\]\[\033[32;1m\]\W\[\033[m\]\$ "
+# Setup the command prompt
+source /gpfs/project/$USER_NAME/.usr_tls/bash_prompt.sh
+
+# Warpify the terminal
+printf '\eP$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "bash"}}\x9c'
 
 # Load the base environment
 home

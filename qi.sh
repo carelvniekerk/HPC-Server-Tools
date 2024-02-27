@@ -1,0 +1,1 @@
+qsub -I -N DevSession -A DialSys -q DSML -l select=1:ncpus=2:mem=16gb:ngpus=1 -l walltime=4:00:00

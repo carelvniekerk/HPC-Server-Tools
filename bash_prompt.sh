@@ -1,0 +1,56 @@
+# coding=utf-8
+# --------------------------------------------------------------------------------
+# Project: User tools for HPC
+# Author: Carel van Niekerk
+# Year: 2024
+# Group: Dialogue Systems and Machine Learning Group
+# Institution: Heinrich Heine University Düsseldorf
+# --------------------------------------------------------------------------------
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Setup command line
+function truncate_path {
+    # Get the current working directory
+    local pwd=$(pwd)
+    # Use parameter expansion to keep only the last two directories
+    local truncated=$(echo $pwd | awk -F/ '{n = split($0,a,"/"); if (n>2) print a[n-1]"/"a[n]; else print $0;}')
+    echo $truncated
+}
+
+function set_prompt {
+    local EXIT="$?"
+    local RED="\[\033[01;31m\]"
+    local GREEN="\[\033[01;32m\]"
+    local NO_COLOR="\[\033[00m\]"
+    local GRAY="\[\033[01;30m\]"
+
+    local host_color="\[\033[01;32m\]"   # Green by default
+
+    # Check if the hostname contains "login"
+    if [[ $(hostname) == *"login"* ]]; then
+        host_color="\[\033[01;33m\]" # Orange
+    fi
+
+    local PS1_HOST="\[\033[01;34m\]$(truncate_path)\[\033[00m\]${host_color}@\h"
+    local PS1_GIT="$(if git rev-parse --git-dir > /dev/null 2>&1; then echo "${GRAY} ${GRAY}$(git rev-parse --abbrev-ref HEAD)${NO_COLOR}"; else echo ""; fi)"
+    local PS1_PYTHON="\[\033[01;32m\]🐍 $(python --version 2>&1 | cut -d" " -f2)\[\033[00m\]"
+
+    if [[ $EXIT == 0 ]]; then
+        PS1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}\n${GREEN}❯ ${NO_COLOR}"
+    else
+        PS1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}\n${RED}❯ ${NO_COLOR}"
+    fi
+}
+
+PROMPT_COMMAND=set_prompt
