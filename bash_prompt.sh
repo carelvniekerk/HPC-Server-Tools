@@ -35,25 +35,25 @@ function set_prompt {
     local NO_COLOR="\[\033[00m\]"
     local GRAY="\[\033[00;30m\]"
 
-    local host_color="\[\033[00;32m\]"   # Green by default
+    local host_color="\[\033[00;32m\] "   # Green by default
 
     # Check if the hostname contains "login"
     if [[ $(hostname) == *"login"* ]]; then
-        host_color="\[\033[00;33m\]" # Orange
+        host_color="\[\033[00;33m\] " # Orange
     fi
 
     if [[ -n "$VIRTUAL_ENV" ]]; then
-        venv="\[\033[0;35m\](${VIRTUAL_ENV_PROMPT})\[\033[00m\] "
+        venv="\[\033[0;35m\]in 󰆧 ${VIRTUAL_ENV_PROMPT}\[\033[00m\] "
     fi
 
     local PS1_HOST="${host_color}\h:\[\033[00;34m\]$(truncate_path)\[\033[00m\] "
-    local PS1_GIT="$(if git rev-parse --git-dir > /dev/null 2>&1; then echo "${GRAY} ${GRAY}$(git rev-parse --abbrev-ref HEAD)${NO_COLOR}"; else echo ""; fi) "
-    local PS1_PYTHON="\[\033[01;32m\]🐍 v$(python --version 2>&1 | cut -d" " -f2)\[\033[00m\]"
+    local PS1_GIT="$(if git rev-parse --git-dir > /dev/null 2>&1; then echo "${GRAY} ${GRAY}$(git rev-parse --abbrev-ref HEAD) ${NO_COLOR}"; else echo ""; fi)"
+    local PS1_PYTHON="\[\033[01;32m\]  v$(python --version 2>&1 | cut -d" " -f2)\[\033[00m\] "
 
     if [[ $EXIT == 0 ]]; then
-        export PS1="${venv}${PS1_HOST}${PS1_GIT}${PS1_PYTHON}\n${GREEN}❯ ${NO_COLOR}"
+        export PS1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}\n${GREEN} ${NO_COLOR}"
     else
-        export PS1="${venv}${PS1_HOST}${PS1_GIT}${PS1_PYTHON}\n${RED}❯ ${NO_COLOR}"
+        export PS1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}\n${RED} ${NO_COLOR}"
     fi
 }
 
