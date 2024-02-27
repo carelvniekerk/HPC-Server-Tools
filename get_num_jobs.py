@@ -17,29 +17,24 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-"""Cleanup logs from the job_logs directory"""
+"""Return the number of running jobs for a user on the HPC cluster"""
 
 import os
 
 
-def main():
-    # Get the path to the logs directory
-    logs_path = os.path.join("/gpfs/project", os.environ.get("USER_NAME"), "job_logs")
-    files = os.listdir(logs_path)
-    # Temp files
-    temps = [file for file in files if '_' in file]
+def get_jobs(username: str) -> list[dict[str, str]]:
+    """Get a list of jobs for a user on the HPC cluster"""
+    jobs = os.popen(f'qstat -u {username}').read().split('\n')[5:-1]
+    jobs = [job.split() for job in jobs]
 
-    # Completed jobs
-    files = [file for file in files if '.OU' in file]
-    job_ids = [file.replace('.OU', '') for file in files]
+    jobs = [{'job_num': idx, 'jobid': job[0], 'name': job[3], 'user': job[2], 'status': job[9]}
+            for idx, job in enumerate(jobs)]
 
-    # Files to remove (temp files and completed jobs)
-    files = [file for job in job_ids for file in [f"{job}.ER", f"{job}.OU", f"{job}.sh"]] + temps
-    files = [os.path.join(logs_path, file) for file in files]
-
-    cmd = "rm " + " ".join(files) if files else ""
-    os.system(cmd)
+    return jobs
 
 
 if __name__ == '__main__':
-    main()
+    jobs = get_jobs(os.environ.get("USER_NAME"))
+    jobs = [job for job in jobs if job['status'] == 'R' and 'DevSession' not in job['name']]
+
+    print(len(jobs))
