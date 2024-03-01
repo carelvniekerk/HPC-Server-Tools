@@ -47,10 +47,21 @@ function set_prompt {
     fi
 
     local NUM_JOBS=$(python /gpfs/project/$USER_NAME/.usr_tls/get_num_jobs.py)
-    local NUM_JOBS="  \[\033[00;32m\] ${NUM_JOBS}\[\033[00m\]"
+    if [ $NUM_JOBS -gt 0 ]; then
+        local NUM_JOBS="  \[\033[00;32m\] ${NUM_JOBS}\[\033[00m\]"
+    else
+        local NUM_JOBS=""
+    fi
 
     local NUM_FREE_GPUS=$(python /gpfs/project/$USER_NAME/.usr_tls/get_free_gpus.py)
-    local NUM_FREE_GPUS="  \[\033[00;32m\]  2080:${NUM_FREE_GPUS}\[\033[00m\]"
+    if [ $NUM_FREE_GPUS -gt 10 ]; then
+        local FREE_GPUS_COLOR="  \[\033[00;32m\]"
+    elif [ $NUM_FREE_GPUS -gt 3 ]; then
+        local FREE_GPUS_COLOR="  \[\033[00;33m\]"
+    else
+        local FREE_GPUS_COLOR="  \[\033[00;31m\]"
+    fi
+    local NUM_FREE_GPUS="${FREE_GPUS_COLOR} ${NUM_FREE_GPUS}\[\033[00m\]"
 
     local PS1_HOST="${host_color}\h:\[\033[00;34m\]$(truncate_path)\[\033[00m\] "
     local PS1_GIT="$(if git rev-parse --git-dir > /dev/null 2>&1; then echo "${GRAY} ${GRAY}$(git rev-parse --abbrev-ref HEAD) ${NO_COLOR}"; else echo ""; fi)"
