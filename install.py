@@ -67,15 +67,18 @@ def main():
         with open(os.path.join(bashrc_path, ".bashrc"), "w") as writer:
             writer.writelines(bashrc)
 
-        bashrc_path = f"/home/{user_name}/.bashrc"
-        with open(bashrc_path, "r") as file:
-            bashrc = file.readlines()
+        bash_profile_path = f"/home/{user_name}/.bash_profile"
+        with open(bash_profile_path, "r") as file:
+            bash_profile = file.readlines()
+        
+        user_tools_bashrc = f"/gpfs/project/{user_name}/.usr_tls/.bashrc"
 
-        bashrc.append("\n# User tools for HPC\n")
-        bashrc.append(f"source /gpfs/project/{user_name}/.usr_tls/.bashrc\n")
+        bash_profile.append("\n# User tools for HPC\n")
+        bash_profile.append(f"if [ -f {user_tools_bashrc} ]; then\n")
+        bash_profile.append(f"\tsource {user_tools_bashrc}\nfi\n")
 
-        with open(bashrc_path, "w") as writer:
-            writer.writelines(bashrc)
+        with open(bash_profile_path, "w") as writer:
+            writer.writelines(bash_profile)
 
         print("Configuration complete. Please restart your terminal to apply changes.")
 

@@ -35,7 +35,7 @@ function set_prompt {
     local NO_COLOR="\[\033[00m\]"
     local GRAY="\[\033[00;30m\]"
 
-    local host_color="\[\033[00;32m\] "   # Green by default
+    local host_color="\[\033[00;32m\]󰒋 "   # Green by default
 
     # Check if the hostname contains "login"
     if [[ $(hostname) == *"login"* ]]; then
@@ -46,14 +46,31 @@ function set_prompt {
         venv="\[\033[0;35m\]in 󰆧 ${VIRTUAL_ENV_PROMPT}\[\033[00m\] "
     fi
 
+    local NUM_JOBS=$(python /gpfs/project/$USER_NAME/.usr_tls/get_num_jobs.py)
+    if [ $NUM_JOBS -gt 0 ]; then
+        local NUM_JOBS="  \[\033[00;32m\] ${NUM_JOBS}\[\033[00m\]"
+    else
+        local NUM_JOBS=""
+    fi
+
+    local NUM_FREE_GPUS=$(python /gpfs/project/$USER_NAME/.usr_tls/get_free_gpus.py)
+    if [ $NUM_FREE_GPUS -gt 10 ]; then
+        local FREE_GPUS_COLOR="  \[\033[00;32m\]"
+    elif [ $NUM_FREE_GPUS -gt 3 ]; then
+        local FREE_GPUS_COLOR="  \[\033[00;33m\]"
+    else
+        local FREE_GPUS_COLOR="  \[\033[00;31m\]"
+    fi
+    local NUM_FREE_GPUS="${FREE_GPUS_COLOR} ${NUM_FREE_GPUS}\[\033[00m\]"
+
     local PS1_HOST="${host_color}\h:\[\033[00;34m\]$(truncate_path)\[\033[00m\] "
     local PS1_GIT="$(if git rev-parse --git-dir > /dev/null 2>&1; then echo "${GRAY} ${GRAY}$(git rev-parse --abbrev-ref HEAD) ${NO_COLOR}"; else echo ""; fi)"
     local PS1_PYTHON="\[\033[01;32m\]  v$(python --version 2>&1 | cut -d" " -f2)\[\033[00m\] "
 
     if [[ $EXIT == 0 ]]; then
-        export PS1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}\n${GREEN} ${NO_COLOR}"
+        export PS1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${NUM_JOBS}${NUM_FREE_GPUS}\n${GREEN} ${NO_COLOR}"
     else
-        export PS1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}\n${RED} ${NO_COLOR}"
+        export PS1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${NUM_JOBS}${NUM_FREE_GPUS}\n${RED} ${NO_COLOR}"
     fi
 }
 
