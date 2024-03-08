@@ -59,11 +59,16 @@ source /gpfs/project/$USER_NAME/.usr_tls/bash_prompt.sh
 
 # Load the base environment
 home
-hf_offline
 setup_path
-base
-activate_cur_venv &&
+base &&
 
-if [[ $(hostname) == *"login"* ]]; then qi; fi
+if [[ $(hostname) == *"login"* ]]
+then
+    qi
+else
+    hf_offline
+    activate_cur_venv &&
+fi
+
 clear &&
 qs
