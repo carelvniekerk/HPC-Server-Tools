@@ -57,13 +57,13 @@ alias ls='ls --color=auto'
 # Setup the command prompt
 source /gpfs/project/$USER_NAME/.usr_tls/bash_prompt.sh
 
-# Warpify the terminal
-printf '\eP$f{"hook": "SourcedRcFileForWarp", "value": { "shell": "bash"}}\x9c'
-
 # Load the base environment
 home
 hf_offline
 setup_path
 base
-activate_cur_venv
+activate_cur_venv &&
+
+if [[ $(hostname) == *"login"* ]]; then qi; fi
+clear &&
 qs
