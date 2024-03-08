@@ -20,11 +20,19 @@
 # limitations under the License.
 
 # Setup command line
-function truncate_path {
+function truncate_path_2 {
     # Get the current working directory
     local pwd=$(pwd)
     # Use parameter expansion to keep only the last two directories
     local truncated=$(echo $pwd | awk -F/ '{n = split($0,a,"/"); if (n>2) print a[n-1]"/"a[n]; else print $0;}')
+    echo $truncated
+}
+
+function truncate_path_1 {
+    # Get the current working directory
+    local pwd=$(pwd)
+    # Use parameter expansion to keep only the last two directories
+    local truncated=$(echo $pwd | awk -F/ '{n = split($0,a,"/"); print a[n];}')
     echo $truncated
 }
 
@@ -35,42 +43,57 @@ function set_prompt {
     local NO_COLOR="\[\033[00m\]"
     local GRAY="\[\033[00;30m\]"
 
-    local host_color="\[\033[00;32m\]󰒋 "   # Green by default
-
-    # Check if the hostname contains "login"
-    if [[ $(hostname) == *"login"* ]]; then
-        host_color="\[\033[00;33m\] " # Orange
-    fi
+    local host_color="\[\033[2;32m\]󰒋 "   # Green by default
 
     if [[ -n "$VIRTUAL_ENV" ]]; then
         venv="\[\033[0;35m\]in 󰆧 ${VIRTUAL_ENV_PROMPT}\[\033[00m\] "
+    else
+        venv="\[\033[0;35m\]\[\033[00m\]"
     fi
 
-    local NUM_JOBS=$(python /gpfs/project/$USER_NAME/.usr_tls/get_num_jobs.py)
-    if [ $NUM_JOBS -gt 0 ]; then
-        local NUM_JOBS="  \[\033[00;32m\] ${NUM_JOBS}\[\033[00m\]"
+    # Check if the hostname contains "login"
+    if [[ $(hostname) == *"login"* ]]; then
+        if [[ $EXIT == 0 ]]; then
+            local char="${GREEN}➜${NO_COLOR}"
+        else
+            local char="${RED}➜${NO_COLOR}"
+        fi
+        export PS1="$char \[\033[01;34m\]$(truncate_path_1)\[\033[00m\] "
     else
-        local NUM_JOBS=""
-    fi
+        local PS1_HOST="${host_color}\h:\[\033[00;34m\]$(truncate_path_2)\[\033[00m\] "
+        local PS1_GIT="$(if git rev-parse --git-dir > /dev/null 2>&1; then echo "${GRAY} ${GRAY}$(git rev-parse --abbrev-ref HEAD) ${NO_COLOR}"; else echo ""; fi)"
+        local PS1_PYTHON="\[\033[01;32m\]  v$(python --version 2>&1 | cut -d" " -f2)\[\033[00m\] "
 
-    local NUM_FREE_GPUS=$(python /gpfs/project/$USER_NAME/.usr_tls/get_free_gpus.py)
-    if [ $NUM_FREE_GPUS -gt 10 ]; then
-        local FREE_GPUS_COLOR="  \[\033[00;32m\]"
-    elif [ $NUM_FREE_GPUS -gt 3 ]; then
-        local FREE_GPUS_COLOR="  \[\033[00;33m\]"
-    else
-        local FREE_GPUS_COLOR="  \[\033[00;31m\]"
-    fi
-    local NUM_FREE_GPUS="${FREE_GPUS_COLOR} ${NUM_FREE_GPUS}\[\033[00m\]"
+        # local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${NUM_JOBS}${NUM_FREE_GPUS}"
+        local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}"
+        
+        # Current prompt length without colors (adjust this as needed)
+        local prompt_length=${#PS1_L1}
+        local prompt_length=$((prompt_length - 84))
+        if [ "$PS1_GIT" != "" ]; then
+            local prompt_length=$((prompt_length - 42))
+        fi
+        
+        # Get the current terminal width
+        local term_width=$(tput cols)
+        
+        # Define your date format
+        local date_format="\[\e[1m\e[97m\]\D{%a %e %b %H:%M}\[\033[00m\]"
+        
+        # Calculate the padding needed
+        local date_length=${#date_format}
+        local date_length=$((date_length - 30))
+        local padding_length=$((term_width - prompt_length - date_length))
+        local padding=$(printf '%*s' $padding_length)
 
-    local PS1_HOST="${host_color}\h:\[\033[00;34m\]$(truncate_path)\[\033[00m\] "
-    local PS1_GIT="$(if git rev-parse --git-dir > /dev/null 2>&1; then echo "${GRAY} ${GRAY}$(git rev-parse --abbrev-ref HEAD) ${NO_COLOR}"; else echo ""; fi)"
-    local PS1_PYTHON="\[\033[01;32m\]  v$(python --version 2>&1 | cut -d" " -f2)\[\033[00m\] "
+        # Set the prompt
+        PS1_L1="${PS1_L1}${padding}${date_format}\[\e[0m\]\n"
 
-    if [[ $EXIT == 0 ]]; then
-        export PS1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${NUM_JOBS}${NUM_FREE_GPUS}\n${GREEN} ${NO_COLOR}"
-    else
-        export PS1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${NUM_JOBS}${NUM_FREE_GPUS}\n${RED} ${NO_COLOR}"
+        if [[ $EXIT == 0 ]]; then
+            export PS1="${PS1_L1}${GREEN} ${NO_COLOR}"
+        else
+            export PS1="${PS1_L1}${RED} ${NO_COLOR}"
+        fi
     fi
 }
 
