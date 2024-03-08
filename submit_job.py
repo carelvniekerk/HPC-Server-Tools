@@ -19,8 +19,8 @@
 # See the License for the specific language governing permissions and
 """Submit a job to the HPC cluster"""
 
-import os
 import json
+import os
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 
 LOGS_PATH = f"/gpfs/project/{os.environ.get('USER_NAME')}/job_logs/"
@@ -90,6 +90,7 @@ def get_python_commands(path: str, arguments: str) -> str:
     command = ['\t' + line if i != 0 else line for i, line in enumerate(command)]
 
     venv_path = get_venv_path(args.job_script)
+    venv_path = os.path.join(venv_path, "bin/activate")
     activate_venv = ["\n# Activate Virtual Environment", f"source {venv_path}\n"]
 
     command = activate_venv + ["# Move to project folder", f"cd {ROOT}\n"] + command
