@@ -3,6 +3,7 @@ alias base_installers='module load Python/3.11.4 intel/xe2020.4 gcc/11.1.0 Sente
 alias base='module load Python/3.11.4 CUDA/11.7.1; module load Python/3.11.4'
 
 # Aliases for user tools
+alias activate_cur_venv="source $CURRENT_VENV"
 alias activate="source /gpfs/project/$USER_NAME/.usr_tls/activate_venv.sh"
 alias qi-setup="python3 /gpfs/project/$USER_NAME/.usr_tls/get_interactive.py"
 alias qi="source /gpfs/project/$USER_NAME/.usr_tls/qi.sh"
