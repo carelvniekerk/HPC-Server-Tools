@@ -22,12 +22,15 @@
 import json
 import os
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
+from pathlib import Path
 
 LOGS_PATH = f"/gpfs/project/{os.environ.get('USER_NAME')}/job_logs/"
 ROOT = f"/gpfs/project/{os.environ.get('USER_NAME')}"
 
-TEMPLATES = f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/session_templates.json"
-with open(TEMPLATES, 'r') as reader:
+TEMPLATES = (
+    f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/session_templates.json"
+)
+with open(TEMPLATES, "r") as reader:
     TEMPLATES = json.load(reader)
 
 
@@ -47,12 +50,14 @@ def build_preamble(args: Namespace) -> str:
     """Build the preamble for the job script"""
     preamble = "#!/bin/sh -l\n"
     preamble += f"#PBS -l walltime={args.walltime}\n"
-    system = f'select=1:ncpus={args.ncpus}:mem={args.memory}gb'
-    system += f':ngpus={args.ngpus}' if args.ngpus > 0 else ''
-    system += f':accelerator_model={args.accelerator_model}' if args.accelerator_model else ''
+    system = f"select=1:ncpus={args.ncpus}:mem={args.memory}gb"
+    system += f":ngpus={args.ngpus}" if args.ngpus > 0 else ""
+    system += (
+        f":accelerator_model={args.accelerator_model}" if args.accelerator_model else ""
+    )
     preamble += f"#PBS -l {system}\n"
     preamble += "#PBS -A 'DialSys'\n"
-    preamble += f"#PBS -q '{args.queue}'\n" if args.queue else ''
+    preamble += f"#PBS -q '{args.queue}'\n" if args.queue else ""
     preamble += f"#PBS -r n\n#PBS -e {LOGS_PATH}\n#PBS -o {LOGS_PATH}\n"
     preamble += f"#PBS -N {args.job_name}\n\n"
 
@@ -65,29 +70,40 @@ def build_preamble(args: Namespace) -> str:
 
 def get_shell_commands(path: str, arguments: str = None) -> str:
     """Get the commands from a shell script and add the arguments to the top of the script"""
-    reader = open(path, 'r')
+    reader = open(path, "r")
     script = reader.read()
     reader.close()
 
-    arguments = [arg.split('--')[-1] for arg in arguments.split(' --') if arg] if arguments else []
-    arguments = ['='.join(arg.split(' ', 1)) for arg in arguments]
+    arguments = (
+        [arg.split("--")[-1] for arg in arguments.split(" --") if arg]
+        if arguments
+        else []
+    )
+    arguments = ["=".join(arg.split(" ", 1)) for arg in arguments]
 
-    commands = [cmd for cmd in script.split('\n') if 'bin/sh' not in cmd]
+    commands = [cmd for cmd in script.split("\n") if "bin/sh" not in cmd]
     if arguments:
-        commands = ['# Parameters'] + arguments + ['# Commands'] + commands
-    commands = [f'# Executing {path}'] + commands
+        commands = ["# Parameters"] + arguments + ["# Commands"] + commands
+    commands = [f"# Executing {path}"] + commands
 
-    return '\n'.join(commands)
+    return "\n".join(commands)
 
 
 def get_python_commands(path: str, arguments: str) -> str:
     """Get the commands from a python script and add the arguments to the python command"""
-    arguments = [arg.split('--')[-1] for arg in arguments.split(' --') if arg] if arguments else []
+    arguments = (
+        [arg.split("--")[-1] for arg in arguments.split(" --") if arg]
+        if arguments
+        else []
+    )
     arguments = [f"--{arg}" for arg in arguments]
 
     command = [f"python3 {path}"] + arguments
-    command = [line + ' \\' if i+1 != len(command) else line for i, line in enumerate(command)]
-    command = ['\t' + line if i != 0 else line for i, line in enumerate(command)]
+    command = [
+        line + " \\" if i + 1 != len(command) else line
+        for i, line in enumerate(command)
+    ]
+    command = ["\t" + line if i != 0 else line for i, line in enumerate(command)]
 
     venv_path = get_venv_path(args.job_script)
     venv_path = os.path.join(venv_path, "bin/activate")
@@ -95,65 +111,81 @@ def get_python_commands(path: str, arguments: str) -> str:
 
     command = activate_venv + ["# Move to project folder", f"cd {ROOT}\n"] + command
 
-    return '\n'.join(command)
+    return "\n".join(command)
 
 
-def save_bash(script: str, path : str = None) -> str:
+def save_bash(script: str, path: str = None) -> str:
     """Save the bash script to a file and return the path to the file"""
     if not path:
         path = os.path.join(LOGS_PATH, "_temp.sh")
 
-    writer = open(path, 'w')
+    writer = open(path, "w")
     writer.write(script)
     writer.close()
 
     return path
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--job_name', help='Job Name', required=True)
-    parser.add_argument('--job_script', help='Path to job script', required=True)
-    parser.add_argument('--job_script_args', help='Arguments for the job script', default=None)
+    parser.add_argument("-n", "--job_name", help="Job Name", default="", type=str)
+    parser.add_argument(
+        "-s", "--job_script", help="Path to job script", required=True, type=Path
+    )
+    parser.add_argument(
+        "-a",
+        "--job_script_args",
+        help="Arguments for the job script",
+        default="",
+        type=str,
+    )
 
-    parser.add_argument('--template', help='Job Queue', default='')
-    parser.add_argument('--queue', help='Job Queue', default='DSML')
-    parser.add_argument('--ncpus', help='Number of CPUs', default=2, type=int)
-    parser.add_argument('--memory', help='Amount of memory in GB', default=32, type=int)
-    parser.add_argument('--ngpus', help='Number of GPUs', default=1, type=int)
-    parser.add_argument('--accelerator_model', help='GPU model', default=None)
-    parser.add_argument('--walltime', help='Walltime in format hh:mm:ss, eg 08:00:00', default='36:00:00', type=str)
+    parser.add_argument("--template", help="Job Queue", default="")
+    parser.add_argument("--queue", help="Job Queue", default="DSML")
+    parser.add_argument("--ncpus", help="Number of CPUs", default=2, type=int)
+    parser.add_argument("--memory", help="Amount of memory in GB", default=32, type=int)
+    parser.add_argument("--ngpus", help="Number of GPUs", default=1, type=int)
+    parser.add_argument("--accelerator_model", help="GPU model", default=None)
+    parser.add_argument(
+        "--walltime",
+        help="Walltime in format hh:mm:ss, eg 08:00:00",
+        default="36:00:00",
+        type=str,
+    )
 
-    parser.add_argument('--torchrun', help='Use torchrun', action='store_true')
+    parser.add_argument("--torchrun", help="Use torchrun", action="store_true")
 
-    parser.add_argument('--view_error', help='View error log', action='store_true')
-    parser.add_argument('--view_log', help='View output log', action='store_true')
+    parser.add_argument("--view_error", help="View error log", action="store_true")
+    parser.add_argument("--view_log", help="View output log", action="store_true")
     args = parser.parse_args()
 
     if args.template in TEMPLATES:
-        args.queue = TEMPLATES[args.template]['queue']
-        args.ncpus = TEMPLATES[args.template]['ncpus']
-        args.memory = TEMPLATES[args.template]['memory']
-        args.ngpus = TEMPLATES[args.template]['ngpus']
-        args.accelerator_model = TEMPLATES[args.template]['accelerator_model']
-        args.walltime = TEMPLATES[args.template]['walltime']
+        args.queue = TEMPLATES[args.template]["queue"]
+        args.ncpus = TEMPLATES[args.template]["ncpus"]
+        args.memory = TEMPLATES[args.template]["memory"]
+        args.ngpus = TEMPLATES[args.template]["ngpus"]
+        args.accelerator_model = TEMPLATES[args.template]["accelerator_model"]
+        args.walltime = TEMPLATES[args.template]["walltime"]
 
     # Build job script and save temporary file
     preamble = build_preamble(args)
 
-    if '.sh' in args.job_script:
+    if ".sh" in args.job_script:
         commands = get_shell_commands(args.job_script, args.job_script_args)
-    elif '.py' in args.job_script:
+    elif ".py" in args.job_script:
         commands = get_python_commands(args.job_script, args.job_script_args)
         if args.torchrun:
-            commands = commands.replace("python3", f"torchrun --standalone --nnodes=1 --nproc_per_node {args.ngpus}")
+            commands = commands.replace(
+                "python3",
+                f"torchrun --standalone --nnodes=1 --nproc_per_node {args.ngpus}",
+            )
             commands += f" \\\n\t--n_gpu {args.ngpus}"
 
     job_script = preamble + "\n" + commands + "\n"
     job_path = save_bash(job_script)
 
     # Submit job
-    out = os.popen(f'qsub {job_path}').read()
-    job_id = [l for l in out.split('\n') if l][0]
+    out = os.popen(f"qsub {job_path}").read()
+    job_id = [l for l in out.split("\n") if l][0]
 
-    save_bash(job_script, os.path.join(LOGS_PATH, f'{job_id}.sh'))
+    save_bash(job_script, os.path.join(LOGS_PATH, f"{job_id}.sh"))

@@ -1,0 +1,32 @@
+# New clear command
+clear() (
+    if [ "$#" -ne 0 ]; then
+        command clear "$@"
+        exit
+    fi
+    h="$(tput lines 2>/dev/null)"
+    if [ "$?" -eq 0 ]; then
+        until [ "$h" -le 1 ]; do
+            printf '\n'
+            h=$((h-1))
+        done
+    fi
+    command clear -x
+)
+
+# Setup ranger quit on exit
+function ranger {
+    local IFS=$'\t\n'
+    local tempfile="$(mktemp -t tmp.XXXXXX)"
+    local ranger_cmd=(
+        command
+        ranger
+        --cmd="map q chain shell echo %d > "$tempfile"; quitall"
+    )
+
+    ${ranger_cmd[@]} "$@"
+    if [[ -f "$tempfile" ]] && [[ "$(cat -- "$tempfile")" != "$(echo -n `pwd`)" ]]; then
+        cd "$(cat "$tempfile")" || return
+    fi
+    command rm -f -- "$tempfile" 2>/dev/null
+}

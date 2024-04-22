@@ -58,7 +58,8 @@ function set_prompt {
         else
             local char="${RED}➜${NO_COLOR}"
         fi
-        export PS1="$char \[\033[01;34m\]$(truncate_path_1)\[\033[00m\] "
+        local PS1_GIT="$(if git rev-parse --git-dir > /dev/null 2>&1; then echo "\[\033[00;34m\]git(\[\033[01;35m\]$(git rev-parse --abbrev-ref HEAD)\[\033[00;34m\]) ${NO_COLOR}"; else echo ""; fi)"
+        export PS1="$char \[\033[01;34m\]$(truncate_path_1)\[\033[00m\] ${PS1_GIT}"
     else
         local PS1_HOST="${host_color}\h:\[\033[00;34m\]$(truncate_path_2)\[\033[00m\] "
         local PS1_GIT="$(if git rev-parse --git-dir > /dev/null 2>&1; then echo "${GRAY} ${GRAY}$(git rev-parse --abbrev-ref HEAD) ${NO_COLOR}"; else echo ""; fi)"

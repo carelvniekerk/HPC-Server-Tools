@@ -20,7 +20,7 @@
 """Get the path to the virtual environment of a project"""
 
 import os
-from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
 BASHRC_PATH = f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/.bashrc"
 
@@ -54,14 +54,16 @@ def save_as_current_venv(path: str) -> None:
 def main():
     """Get the path to the virtual environment of a project"""
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-p", "--path", type=str, default=".", help="Path to the project")
+    parser.add_argument(
+        "-p", "--path", type=str, default=".", help="Path to the project"
+    )
     path = parser.parse_args().path
-    
+
     path = get_venv_path(path)
 
     save_as_current_venv(f"{path}/bin/activate")
     print(f"{path}/bin/activate")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
