@@ -33,7 +33,7 @@ def setup_pip():
 def main():
     """Configure the user tools for HPC project."""
     bashrc_path = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(bashrc_path, ".bashrc"), "r") as file:
+    with open(os.path.join(bashrc_path, ".bash_env"), "r") as file:
         bashrc = file.readlines()
 
     setup_complete = False
@@ -64,21 +64,8 @@ def main():
                 bashrc[i] = "export SETUP_COMPLETE=True\n"
                 break
 
-        with open(os.path.join(bashrc_path, ".bashrc"), "w") as writer:
+        with open(os.path.join(bashrc_path, ".bash_env"), "w") as writer:
             writer.writelines(bashrc)
-
-        bash_profile_path = f"/home/{user_name}/.bash_profile"
-        with open(bash_profile_path, "r") as file:
-            bash_profile = file.readlines()
-        
-        user_tools_bashrc = f"/gpfs/project/{user_name}/.usr_tls/.bashrc"
-
-        bash_profile.append("\n# User tools for HPC\n")
-        bash_profile.append(f"if [ -f {user_tools_bashrc} ]; then\n")
-        bash_profile.append(f"\tsource {user_tools_bashrc}\nfi\n")
-
-        with open(bash_profile_path, "w") as writer:
-            writer.writelines(bash_profile)
 
         print("Configuration complete. Please restart your terminal to apply changes.")
 

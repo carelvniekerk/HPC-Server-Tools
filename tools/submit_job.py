@@ -28,7 +28,7 @@ LOGS_PATH = f"/gpfs/project/{os.environ.get('USER_NAME')}/job_logs/"
 ROOT = f"/gpfs/project/{os.environ.get('USER_NAME')}"
 
 TEMPLATES = (
-    f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/session_templates.json"
+    f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/tools/session_templates.json"
 )
 with open(TEMPLATES, "r") as reader:
     TEMPLATES = json.load(reader)

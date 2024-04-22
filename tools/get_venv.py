@@ -22,7 +22,7 @@
 import os
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
-BASHRC_PATH = f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/.bashrc"
+BASHENV_PATH = f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/.bash_env"
 
 
 def get_venv_path(path: str) -> str:
@@ -39,7 +39,7 @@ def get_venv_path(path: str) -> str:
 
 def save_as_current_venv(path: str) -> None:
     """Save the path to the virtual environment as the current virtual environment in the .bashrc file"""
-    with open(BASHRC_PATH, "r") as f:
+    with open(BASHENV_PATH, "r") as f:
         lines = f.readlines()
 
     for i, line in enumerate(lines):
@@ -47,7 +47,7 @@ def save_as_current_venv(path: str) -> None:
             lines[i] = f"export CURRENT_VENV={path}\n"
             break
 
-    with open(BASHRC_PATH, "w") as f:
+    with open(BASHENV_PATH, "w") as f:
         f.writelines(lines)
 
 

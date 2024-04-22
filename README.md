@@ -29,9 +29,12 @@ git clone https://gitlab.cs.uni-duesseldorf.de/dsml/user_tools.git .usr_tls
 
 Run the installation script to install the tools. 
 ```bash
-python3 .usr_tls/install.py
+cd .usr_tls
+python3 install.py
+source setup_symlinks.sh
+cd ..
 ```
-Should you wish to rerun this script at a later time, change the value of the `SETUP_COMPLETE` variable in the `.bashrc file` to `False`.
+Should you wish to rerun this script at a later time, change the value of the `SETUP_COMPLETE` variable in the `.bash_env file` to `False`.
 
 ## Tools
 The following tools are available in the user_tools repository:
