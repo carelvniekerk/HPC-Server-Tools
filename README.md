@@ -18,7 +18,7 @@ module load Python/3.11.4
 
 Install the required packages. 
 ```bash
-pip3 install --user tabulate
+pip3 install --user tabulate ranger-fm poetry
 ```
 
 Clone the user_tools repository to your home directory on the HPC system. 

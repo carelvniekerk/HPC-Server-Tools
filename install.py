@@ -32,12 +32,12 @@ def setup_pip():
 
 def main():
     """Configure the user tools for HPC project."""
-    bashrc_path = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(bashrc_path, ".bash_env"), "r") as file:
-        bashrc = file.readlines()
+    bashenv_path = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(bashenv_path, ".bash_env"), "r") as file:
+        bashenv = file.readlines()
 
     setup_complete = False
-    for i, line in enumerate(bashrc):
+    for i, line in enumerate(bashenv):
         if line.startswith("export SETUP_COMPLETE="):
             setup_complete = eval(line.split("=")[1].strip().title())
             break
@@ -49,9 +49,9 @@ def main():
         user_name = input("Enter your user name: ")
         print("Setting up user tools for HPC project...")
 
-        for i, line in enumerate(bashrc):
+        for i, line in enumerate(bashenv):
             if line.startswith("export USER_NAME="):
-                bashrc[i] = f"export USER_NAME={user_name}\n"
+                bashenv[i] = f"export USER_NAME={user_name}\n"
                 break
 
         if not os.path.isdir(os.path.join("/gpfs/project", user_name, "job_logs")):
@@ -59,13 +59,13 @@ def main():
 
         setup_pip()
 
-        for i, line in enumerate(bashrc):
+        for i, line in enumerate(bashenv):
             if line.startswith("export SETUP_COMPLETE="):
-                bashrc[i] = "export SETUP_COMPLETE=True\n"
+                bashenv[i] = "export SETUP_COMPLETE=True\n"
                 break
 
-        with open(os.path.join(bashrc_path, ".bash_env"), "w") as writer:
-            writer.writelines(bashrc)
+        with open(os.path.join(bashenv_path, ".bash_env"), "w") as writer:
+            writer.writelines(bashenv)
 
         print("Configuration complete. Please restart your terminal to apply changes.")
 
