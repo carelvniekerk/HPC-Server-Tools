@@ -14,6 +14,7 @@ alias job_log="python3 /gpfs/project/$USER_NAME/.usr_tls/tools/job_log.py"
 
 # Some alias for convenience:
 alias home="cd /gpfs/project/$USER_NAME"
+alias set_lwd="cd $LWD"
 alias q='exit'
 alias c='cd'
 alias ..='cd ..'
