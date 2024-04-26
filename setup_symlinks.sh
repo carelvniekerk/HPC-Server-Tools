@@ -10,6 +10,9 @@ ln -s /gpfs/project/$USER_NAME/.usr_tls/.bashrc .bashrc
 ln -s /gpfs/project/$USER_NAME/.usr_tls/.bash_env .bash_env
 ln -s /gpfs/project/$USER_NAME/.usr_tls/.bash_profile .bash_profile
 
+# Create symlinks for readline tab tools (inputrc)
+ln -s /gpfs/project/$USER_NAME/.usr_tls/.inputrc .inputrc
+
 # Create symlinks for git configuration files
 ln -s /gpfs/project/$USER_NAME/.usr_tls/.gitconfig .gitconfig
 
