@@ -170,9 +170,9 @@ if __name__ == "__main__":
     # Build job script and save temporary file
     preamble = build_preamble(args)
 
-    if ".sh" in args.job_script:
+    if ".sh" in args.job_script.name:
         commands = get_shell_commands(args.job_script, args.job_script_args)
-    elif ".py" in args.job_script:
+    elif ".py" in args.job_script.name:
         commands = get_python_commands(args.job_script, args.job_script_args)
         if args.torchrun:
             commands = commands.replace(

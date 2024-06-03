@@ -18,7 +18,7 @@ module load Python/3.11.4
 
 Install the required packages. 
 ```bash
-pip3 install -i http://pypi.repo.test.hhu.de/simple/ --trusted-host pypi.repo.test.hhu.de --user tabulate ranger-fm poetry
+pip3 install -i http://pypi.repo.test.hhu.de/simple/ --trusted-host pypi.repo.test.hhu.de --user tabulate poetry
 ```
 
 Clone the user_tools repository to your home directory on the HPC system. 

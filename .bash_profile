@@ -13,8 +13,7 @@ then
     module load Python/3.11.4
 else
     base &&
-    activate_cur_venv&&
-    set_lwd
+    activate_cur_venv
 fi &&
 
 clear &&
