@@ -17,30 +17,32 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-"""Get the status of the nodes in the HPC cluster and the resources available on each node."""
 
 import os
-from tabulate import tabulate
+from concurrent.futures import ThreadPoolExecutor
+from rich.console import Console
+from rich.table import Table
+from rich.columns import Columns
+from rich import box
 
+console = Console()
 QUEUE = "DSML"
 USER_NAME = os.environ.get("USER_NAME")
 
-
-def get_node_status(node_name: str) -> dict[str, str]:
+def get_node_status(node_name: str) -> dict:
     """Get the status of a node in the HPC cluster."""
-    status = os.popen(f'pbsnodes {node_name}').read()
-    status = [line for line in status.split('\n') if line and node_name not in line]
-    status = [line.split(' = ', 1) for line in status]
-    status = {key.strip(): info.strip() for key, info in status}
+    try:
+        status = os.popen(f'pbsnodes {node_name}').read()
+        status = [line for line in status.split('\n') if line and node_name not in line]
+        status = [line.split(' = ', 1) for line in status]
+        return {key.strip(): info.strip() for key, info in status}
+    except Exception as e:
+        console.print(f"[red]Error getting status for node {node_name}: {e}[/red]")
+        return {}
 
-    return status
-
-
-def get_resources_available(node_status: dict[str, str]) -> dict[str, int]:
+def get_resources_available(node_status: dict) -> dict:
     """Get the resources available on a node in the HPC cluster."""
     resources = {'ncpus': 0, 'ngpus': 0, 'mem': 0}
-
-    # Check if the node is free
     if 'state' not in node_status or node_status['state'] != 'free':
         return resources
 
@@ -48,89 +50,80 @@ def get_resources_available(node_status: dict[str, str]) -> dict[str, int]:
         resources[resource] = get_avail(node_status, resource)
     return resources
 
+def get_avail(status: dict, resource: str) -> int:
+    """Calculate the available amount of a resource."""
+    available = int(status.get(f'resources_available.{resource}', '0').replace('mb', '').replace('kb', ''))
+    assigned = int(status.get(f'resources_assigned.{resource}', '0').replace('mb', '').replace('kb', ''))
 
-def get_avail(status: dict[str, int], resource: str) -> int:
-    # Get the available and assigned resources
-    available = status[f'resources_available.{resource}'] if f'resources_available.{resource}' in status else '0'
-    assigned = status[f'resources_assigned.{resource}'] if f'resources_assigned.{resource}' in status else '0'
+    if 'mb' in status.get(f'resources_available.{resource}', ''):
+        available *= 1024
+    if 'mb' in status.get(f'resources_assigned.{resource}', ''):
+        assigned *= 1024
 
-    # Convert the resources to integers in bytes
-    mb_unit = 'mb' in status[f'resources_available.{resource}'] if f'resources_available.{resource}' in status else 0
-    available = int(available.replace('mb', '').replace('kb', ''))
-    available = available * 1024 if mb_unit else available
-    mb_unit = 'mb' in status[f'resources_assigned.{resource}'] if f'resources_assigned.{resource}' in status else 0
-    assigned = int(assigned.replace('mb', '').replace('kb', ''))
-    available = available * 1024 if mb_unit else available
+    available -= assigned
 
-    available = available - assigned
-    # Convert the resources to gigabytes
-    if 'mb' in status[f'resources_available.{resource}'] or 'kb' in status[f'resources_available.{resource}']:
-        available /= 1048576
+    if 'mb' in status.get(f'resources_available.{resource}', '') or 'kb' in status.get(f'resources_available.{resource}', ''):
+        available //= 1048576
     return available
 
+def print_hpc_banner():
+    banner = """
+█░█░█ █▀▀ █░░ █▀▀ █▀█ █▀▄▀█ █▀▀   ▀█▀ █▀█   █░█ █ █░░ █▄▄ █▀▀ █▀█ ▀█▀ █
+▀▄▀▄▀ ██▄ █▄▄ █▄▄ █▄█ █░▀░█ ██▄   ░█░ █▄█   █▀█ █ █▄▄ █▄█ ██▄ █▀▄ ░█░ ▄
+    """
+    console.print(banner, style="bold blue", justify="left")
+
+def get_node_list(prefix: str, indices: list) -> list:
+    """Generate a list of node names based on a prefix and a list of indices."""
+    return [f'{prefix}{i}' for i in indices]
+
+def aggregate_resources(nodes: list) -> dict:
+    """Aggregate resources across a list of nodes."""
+    with ThreadPoolExecutor() as executor:
+        status_list = list(executor.map(get_node_status, nodes))
+    resources_list = [get_resources_available(status) for status in status_list]
+    if not resources_list:
+        return {'ncpus': 0, 'ngpus': 0, 'mem': 0}
+    return {key: sum(node[key] for node in resources_list) for key in resources_list[0]}
+
+def display_resources():
+    # Display the job status
+    console.print(os.popen(f"qstat -a {QUEUE}").read(), style="bold blue", justify="left")
+    console.print(os.popen(f"qstat -u {USER_NAME}").read(), style="bold blue", justify="left")
+
+    # Define node groups
+    node_groups = {
+        "GTX2080": get_node_list('hilbert', [313, 314]),
+        "GTX1080TI": get_node_list('hilbert', [300 + i for i in range(13) if i != 8]),
+        "TeslaT4": get_node_list('hilbert', [120, 121, 122, 123, 124]),
+        "A100": get_node_list('hilbert', [400, 401, 402, 403]),
+        "RTX8000": get_node_list('hilbert', [330, 331]),
+        "RTX6000": get_node_list('hilbert', [316, 317]),
+    }
+
+    tables = []
+
+    for group_name, nodes in node_groups.items():
+        resources = aggregate_resources(nodes)
+        table = Table(title=f"{group_name} Resources", box=box.SIMPLE_HEAVY, expand=True)
+        table.add_column("Resource", justify="center", style="bold")
+        table.add_column("Available", justify="center", style="bold")
+
+        for resource, value in resources.items():
+            if resource.lower() == "ncpus":
+                color = "green" if value > 20 else "yellow" if value > 0 else "red"
+            if resource.lower() == "ngpus":
+                color = "green" if value > 10 else "yellow" if value > 0 else "red"
+            if resource.lower() == "mem":
+                color = "green" if value > 320 else "yellow" if value > 0 else "red"
+                value = f"{value} GB"
+            table.add_row(resource.upper(), f"[{color}]{value}[/]")
+        tables.append(table)
+
+    # Print tables in columns (3 tables per row)
+    for i in range(0, len(tables), 3):
+        console.print(Columns(tables[i:i+3]))
 
 if __name__ == "__main__":
-    print(" _    _      _                            _          _   _ _ _ _               _   ")
-    print("| |  | |    | |                          | |        | | | (_) | |             | |  ")
-    print("| |  | | ___| | ___ ___  _ __ ___   ___  | |_ ___   | |_| |_| | |__   ___ _ __| |_ ")
-    print("| |/\| |/ _ \ |/ __/ _ \| '_ ` _ \ / _ \ | __/ _ \  |  _  | | | '_ \ / _ \ '__| __|")
-    print("\  /\  /  __/ | (_| (_) | | | | | |  __/ | || (_) | | | | | | | |_) |  __/ |  | |_ ")
-    print(" \/  \/ \___|_|\___\___/|_| |_| |_|\___|  \__\___/  \_| |_/_|_|_.__/ \___|_|   \__|")
-    print("")
-
-    # Get the status of the queue and the user jobs
-    os.system(f"qstat -a {QUEUE}")
-    os.system(f"qstat -u {USER_NAME}")
-
-    # Get the status of the DSML 2080 nodes
-    status = [get_node_status(node) for node in ['hilbert313', 'hilbert314']]
-    resources = [get_resources_available(stat) for stat in status]
-    gtx2080_resources = {key: sum([node[key] for node in resources]) for key in resources[0]}
-
-    headers = ["GTX2080\nCPU's", "\nGPU's", "\nMemory"]
-    rows = [gtx2080_resources['ncpus'], gtx2080_resources['ngpus'], f"{int(gtx2080_resources['mem'])} gb"]
-
-    # Get the status of the CUDA 1080ti nodes
-    nodes = [f'hilbert{300 + i}' for i in range(13) if i != 8]
-    status = [get_node_status(node) for node in nodes]
-    resources = [get_resources_available(stat) for stat in status]
-    gtx1080ti_resources = {key: sum([node[key] for node in resources]) for key in resources[0]}
-
-    headers += ["    ", "GTX1080TI\nCPU's", "\nGPU's", "\nMemory"]
-    rows += ['', gtx1080ti_resources['ncpus'], gtx1080ti_resources['ngpus'], f"{int(gtx1080ti_resources['mem'])} gb"]
-
-    # Get the status of the Tesla T4 nodes
-    status = [get_node_status(node) for node in ['hilbert120', 'hilbert121', 'hilbert122', 'hilbert123', 'hilbert124']]
-    resources = [get_resources_available(stat) for stat in status]
-    teslat4_resources = {key: sum([node[key] for node in resources]) for key in resources[0]}
-
-    headers += ["    ", "TeslaT4\nCPU's", "\nGPU's", "\nMemory"]
-    rows += ['', teslat4_resources['ncpus'], teslat4_resources['ngpus'], f"{int(teslat4_resources['mem'])} gb"]
-
-    print(tabulate([rows], headers))
-
-    # Get the status of the A100 nodes
-    status = [get_node_status(node) for node in ['hilbert400', 'hilbert401', 'hilbert402', 'hilbert403']]
-    resources = [get_resources_available(stat) for stat in status]
-    a100_resources = {key: sum([node[key] for node in resources]) for key in resources[0]}
-
-    headers = ["A100\nCPU's", "\nGPU's", "\nMemory"]
-    rows = [a100_resources['ncpus'], a100_resources['ngpus'], f"{int(a100_resources['mem'])} gb"]
-
-    # Get the status of the RTX8000 nodes
-    status = [get_node_status(node) for node in ['hilbert330', 'hilbert331']]
-    resources = [get_resources_available(stat) for stat in status]
-    rtx8000_resources = {key: sum([node[key] for node in resources]) for key in resources[0]}
-
-    headers += ["    ", "RTX8000\nCPU's", "\nGPU's", "\nMemory"]
-    rows += ['', rtx8000_resources['ncpus'], rtx8000_resources['ngpus'], f"{int(rtx8000_resources['mem'])} gb"]
-
-    # Get the status of the RTX6000 nodes
-    status = [get_node_status(node) for node in ['hilbert316', 'hilbert317']]
-    resources = [get_resources_available(stat) for stat in status]
-    rtx6000_resources = {key: sum([node[key] for node in resources]) for key in resources[0]}
-
-    headers += ["    ", "RTX6000\nCPU's", "\nGPU's", "\nMemory"]
-    rows += ['', rtx6000_resources['ncpus'], rtx6000_resources['ngpus'], f"{int(rtx6000_resources['mem'])} gb"]
-
-    print(tabulate([rows], headers))
+    print_hpc_banner()
+    display_resources()
