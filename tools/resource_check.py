@@ -93,12 +93,13 @@ def display_resources():
 
     # Define node groups
     node_groups = {
-        "GTX2080": get_node_list('hilbert', [313, 314]),
-        "GTX1080TI": get_node_list('hilbert', [300 + i for i in range(13) if i != 8]),
-        "TeslaT4": get_node_list('hilbert', [120, 121, 122, 123, 124]),
-        "A100": get_node_list('hilbert', [400, 401, 402, 403]),
-        "RTX8000": get_node_list('hilbert', [330, 331]),
-        "RTX6000": get_node_list('hilbert', [316, 317]),
+        "GTX2080-8GB": get_node_list('hilbert', [313, 314]),
+        "GTX1080TI-12GB": get_node_list('hilbert', [300 + i for i in range(13) if i != 8]),
+        "TeslaT4-16GB": get_node_list('hilbert', [120, 121, 122, 123, 124]),
+        "A100-40GB": get_node_list('hilbert', [400, 401, 402, 403]),
+	"A100-80GB": get_node_list('hilbert', [404, 405, 406]),
+        "RTX8000-48GB": get_node_list('hilbert', [330, 331]),
+        "RTX6000-24GB": get_node_list('hilbert', [316, 317, 318, 319]),
     }
 
     tables = []
@@ -120,9 +121,9 @@ def display_resources():
             table.add_row(resource.upper(), f"[{color}]{value}[/]")
         tables.append(table)
 
-    # Print tables in columns (3 tables per row)
-    for i in range(0, len(tables), 3):
-        console.print(Columns(tables[i:i+3]))
+    # Print tables in columns (4 tables per row)
+    for i in range(0, len(tables), 4):
+        console.print(Columns(tables[i:i+4]))
 
 if __name__ == "__main__":
     print_hpc_banner()
