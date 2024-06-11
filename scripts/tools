@@ -46,3 +46,8 @@ get_gpu_indices() {
     # Output the result
     echo $gpu_indices
 }
+
+# Function to show status of available GPUs
+gs() {
+    gpustat --id "$(get_gpu_indices)" --no-header --gpuname-width 10 --interval 1
+}

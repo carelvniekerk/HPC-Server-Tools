@@ -29,4 +29,3 @@ alias src="source ~/.bash_profile"
 
 # Python aliases
 alias py="python3"
-alias gs="gpustat --id $(get_gpu_indices) --no-header --gpuname-width 10 --interval 1"
