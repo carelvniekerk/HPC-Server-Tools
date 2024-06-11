@@ -10,11 +10,16 @@ home
 
 if [[ $(hostname) == *"login"* ]]
 then
-    module load Python/3.11.4
+    module load Python/3.11.4 &&
+    clear &&
+    qs
 else
     base &&
     activate_cur_venv
-fi &&
-
-clear &&
-qs
+    if tmux has-session -t development_session 2>/dev/null
+    then
+        echo ""
+    else
+        dev-tmux
+    fi
+fi

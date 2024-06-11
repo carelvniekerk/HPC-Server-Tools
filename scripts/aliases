@@ -29,3 +29,6 @@ alias src="source ~/.bash_profile"
 
 # Python aliases
 alias py="python3"
+
+# Tmux aliases
+alias dev-tmux="source /gpfs/project/$USER_NAME/.usr_tls/tools/tmux_dev_session.sh"
