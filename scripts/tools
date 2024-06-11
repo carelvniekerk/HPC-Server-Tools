@@ -37,7 +37,7 @@ get_gpu_indices() {
             if [ -z "$gpu_indices" ]; then
                 gpu_indices="$index"
             else
-                gpu_indices="$gpu_indices,$index"
+                gpu_indices="$gpu_indices $index"
             fi
         fi
         index=$((index + 1))
@@ -49,5 +49,5 @@ get_gpu_indices() {
 
 # Function to show status of available GPUs
 gs() {
-    gpustat --id "$(get_gpu_indices)" --no-header --gpuname-width 10 --interval 1
+    python3 /gpfs/project/${USER_NAME}/.usr_tls/tools/gstat.py --id "$(get_gpu_indices)"
 }
