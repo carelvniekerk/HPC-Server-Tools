@@ -14,7 +14,7 @@ tmux split-window -h
 
 # Resize the panes
 tmux select-pane -t 1
-tmux resize-pane -R 80
+tmux resize-pane -R 70
 
 # Run commands in each pane
 tmux select-pane -t 0
