@@ -69,7 +69,7 @@ def display_info(stdscr, selected_gpus):
         # Display GPU info
         row = 5
         for gpu in gpu_info:
-            stdscr.addstr(row, 0, "GPU {}: {}".format(gpu['index'], gpu['name']), curses.color_pair(3))
+            stdscr.addstr(row, 0, "GPU {}: {}".format(gpu['index'], gpu['name']), curses.color_pair(3) | curses.A_BOLD)
             stdscr.addstr(row + 1, 0, "Memory Usage: ", curses.color_pair(7))
             stdscr.addstr("{}/{} MB".format(gpu['memory_used'], gpu['memory_total']), curses.color_pair(7) | curses.A_BOLD)
             stdscr.addstr(row + 2, 0, "Memory Free: ", curses.color_pair(7))
