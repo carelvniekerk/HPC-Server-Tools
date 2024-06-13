@@ -55,6 +55,9 @@ def build_preamble(args: Namespace) -> str:
     system += (
         f":accelerator_model={args.accelerator_model}" if args.accelerator_model else ""
     )
+    system += (
+        f":arch={args.architecture}" if args.architecture else ""
+    )
     preamble += f"#PBS -l {system}\n"
     preamble += "#PBS -A 'DialSys'\n"
     preamble += f"#PBS -q '{args.queue}'\n" if args.queue else ""
@@ -62,8 +65,10 @@ def build_preamble(args: Namespace) -> str:
     preamble += f"#PBS -N {args.job_name}\n\n"
 
     preamble += "# Load environment\n"
-    preamble += f"module load Python/3.11.4 CUDA/11.7.1\nmodule load Python/3.11.4"
-    preamble += "\nexport TRANSFORMERS_OFFLINE=1\nexport HF_DATASETS_OFFLINE=1\nexport HF_EVALUATE_OFFLINE=1"
+    preamble += "source ~/.bashrc\n"
+    preamble += "load_python\nload_cuda"
+    # preamble += f"module load Python/3.11.4 CUDA/11.7.1\nmodule load Python/3.11.4"
+    # preamble += "\nexport TRANSFORMERS_OFFLINE=1\nexport HF_DATASETS_OFFLINE=1\nexport HF_EVALUATE_OFFLINE=1"
 
     return preamble
 
@@ -146,6 +151,7 @@ if __name__ == "__main__":
     parser.add_argument("--memory", help="Amount of memory in GB", default=32, type=int)
     parser.add_argument("--ngpus", help="Number of GPUs", default=1, type=int)
     parser.add_argument("--accelerator_model", help="GPU model", default=None)
+    parser.add_argument("--architecture", help="CPU Architecture", default=None)
     parser.add_argument(
         "--walltime",
         help="Walltime in format hh:mm:ss, eg 08:00:00",
@@ -160,12 +166,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.template in TEMPLATES:
-        args.queue = TEMPLATES[args.template]["queue"]
-        args.ncpus = TEMPLATES[args.template]["ncpus"]
-        args.memory = TEMPLATES[args.template]["memory"]
-        args.ngpus = TEMPLATES[args.template]["ngpus"]
-        args.accelerator_model = TEMPLATES[args.template]["accelerator_model"]
-        args.walltime = TEMPLATES[args.template]["walltime"]
+        args.queue = TEMPLATES[args.template]["queue"] if "queue" in TEMPLATES[args.template] else args.queue
+        args.ncpus = TEMPLATES[args.template]["ncpus"] if "ncpus" in TEMPLATES[args.template] else args.ncpus
+        args.memory = TEMPLATES[args.template]["memory"] if "memory" in TEMPLATES[args.template] else args.memory
+        args.ngpus = TEMPLATES[args.template]["ngpus"] if "ngpus" in TEMPLATES[args.template] else args.ngpus
+        args.accelerator_model = TEMPLATES[args.template]["accelerator_model"] if "accelerator_model" in TEMPLATES[args.template] else args.accelerator_model
+        args.architecture = TEMPLATES[args.template]["architecture"] if "architecture" in TEMPLATES[args.template] else args.architecture
+        args.walltime = TEMPLATES[args.template]["walltime"] if "walltime" in TEMPLATES[args.template] else args.walltime
 
     # Build job script and save temporary file
     preamble = build_preamble(args)

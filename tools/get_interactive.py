@@ -38,6 +38,7 @@ def main():
     parser.add_argument("--memory", help="Amount of memory in GB", type=int)
     parser.add_argument("--ngpus", help="Number of GPUs", default=1, type=int)
     parser.add_argument("--accelerator_model", help="GPU model", default=None)
+    parser.add_argument("--architecture", help="CPU Architecture", default=None)
     parser.add_argument(
         "--walltime",
         help="Walltime in format hh:mm:ss, eg 08:00:00",
@@ -47,12 +48,13 @@ def main():
     args = parser.parse_args()
 
     if args.template in TEMPLATES:
-        args.queue = TEMPLATES[args.template]["queue"]
-        args.ncpus = TEMPLATES[args.template]["ncpus"]
-        args.memory = TEMPLATES[args.template]["memory"]
-        args.ngpus = TEMPLATES[args.template]["ngpus"]
-        args.accelerator_model = TEMPLATES[args.template]["accelerator_model"]
-        args.walltime = TEMPLATES[args.template]["walltime"]
+        args.queue = TEMPLATES[args.template]["queue"] if "queue" in TEMPLATES[args.template] else args.queue
+        args.ncpus = TEMPLATES[args.template]["ncpus"] if "ncpus" in TEMPLATES[args.template] else args.ncpus
+        args.memory = TEMPLATES[args.template]["memory"] if "memory" in TEMPLATES[args.template] else args.memory
+        args.ngpus = TEMPLATES[args.template]["ngpus"] if "ngpus" in TEMPLATES[args.template] else args.ngpus
+        args.accelerator_model = TEMPLATES[args.template]["accelerator_model"] if "accelerator_model" in TEMPLATES[args.template] else args.accelerator_model
+        args.architecture = TEMPLATES[args.template]["architecture"] if "architecture" in TEMPLATES[args.template] else args.architecture
+        args.walltime = TEMPLATES[args.template]["walltime"] if "walltime" in TEMPLATES[args.template] else args.walltime
 
     command = ["qsub", "-I", "-N", "DevSession", "-A", "DialSys"]
 
@@ -69,6 +71,9 @@ def main():
     system = f"select=1:ncpus={args.ncpus}:mem={args.memory}gb:ngpus={args.ngpus}"
     system += (
         f":accelerator_model={args.accelerator_model}" if args.accelerator_model else ""
+    )
+    system += (
+        f":arch={args.architecture}" if args.architecture else ""
     )
     command.append(system)
 

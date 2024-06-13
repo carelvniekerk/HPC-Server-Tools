@@ -7,36 +7,41 @@
     "accelerator_model": null,
     "walltime": "4:00:00"
   },
-  "DSML_long": {
+  "DSML": {
     "queue": "DSML",
     "ncpus": 2,
     "ngpus": 1,
     "memory": 16,
-    "accelerator_model": null,
-    "walltime": "48:00:00"
+    "accelerator_model": null
   },
-  "DSML_short_large": {
-    "queue": "DSML",
-    "ncpus": 2,
-    "ngpus": 1,
-    "memory": 32,
-    "accelerator_model": null,
-    "walltime": "4:00:00"
-  },
-  "DSML_long_large": {
-    "queue": "DSML",
-    "ncpus": 2,
-    "ngpus": 1,
-    "memory": 32,
-    "accelerator_model": null,
-    "walltime": "48:00:00"
-  },
-  "GTX1080_short": {
+  "GTX1080": {
     "queue": "",
     "ncpus": 2,
     "ngpus": 1,
     "memory": 32,
-    "accelerator_model": "GTX1080TI",
-    "walltime": "4:00:00"
+    "accelerator_model": "GTX1080TI"
+  },
+  "RTX6000": {
+    "queue": "",
+    "ncpus": 2,
+    "ngpus": 1,
+    "memory": 32,
+    "accelerator_model": "RTX6000"
+  },
+  "A100_40GB": {
+    "queue": "",
+    "ncpus": 2,
+    "ngpus": 1,
+    "memory": 52,
+    "accelerator_model": "a100",
+    "architecture": "zen2"
+  },
+  "A100_80GB": {
+    "queue": "",
+    "ncpus": 2,
+    "ngpus": 1,
+    "memory": 96,
+    "accelerator_model": "a100",
+    "architecture": "zen3"
   }
 }
