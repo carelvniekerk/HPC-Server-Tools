@@ -28,6 +28,13 @@
     "memory": 32,
     "accelerator_model": "rtx6000"
   },
+  "RTX8000": {
+    "queue": "",
+    "ncpus": 2,
+    "ngpus": 1,
+    "memory": 52,
+    "accelerator_model": "rtx8000"
+  },
   "A100_40GB": {
     "queue": "",
     "ncpus": 2,
