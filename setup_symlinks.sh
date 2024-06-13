@@ -15,7 +15,3 @@ ln -s /gpfs/project/$USER_NAME/.usr_tls/.inputrc .inputrc
 
 # Create symlinks for git configuration files
 ln -s /gpfs/project/$USER_NAME/.usr_tls/.gitconfig .gitconfig
-
-# Create symlinks for ranger configuration files
-cd .config
-ln -s /gpfs/project/$USER_NAME/.usr_tls/.config/ranger ranger
