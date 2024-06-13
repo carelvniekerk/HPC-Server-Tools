@@ -19,14 +19,14 @@
     "ncpus": 2,
     "ngpus": 1,
     "memory": 32,
-    "accelerator_model": "GTX1080TI"
+    "accelerator_model": "gtx1080ti"
   },
   "RTX6000": {
     "queue": "",
     "ncpus": 2,
     "ngpus": 1,
     "memory": 32,
-    "accelerator_model": "RTX6000"
+    "accelerator_model": "rtx6000"
   },
   "A100_40GB": {
     "queue": "",
