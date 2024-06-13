@@ -1,6 +1,10 @@
 # Aliases for loading modules
-alias base_installers='module load Python/3.11.4 intel/xe2020.4 gcc/11.1.0 SentencePiece/0.1.94 CUDA/11.7.1; module load Python/3.11.4'
-alias base='module load Python/3.11.4 CUDA/11.7.1; module load Python/3.11.4; module load tmux/3.3a'
+alias load_python="module load Python/${PYTHON_VERSION}"
+alias load_cuda="module load CUDA/${CUDA_VERSION}"
+alias load_tmux="module load tmux/3.3a"
+alias load_installation_utils="module load intel/xe2020.4 gcc/11.1.0 SentencePiece/0.1.94"
+alias base_installers='load_python && load_cuda && load_installation_utils'
+alias base='load_python && load_cuda && load_tmux'
 
 # Aliases for user tools
 alias activate_cur_venv="source $CURRENT_VENV"
