@@ -1,51 +1,7 @@
-# Git version checking
-autoload -Uz is-at-least
-git_version="${${(As: :)$(git version 2>/dev/null)}[3]}"
-
-#
 # Functions Current
 # (sorted alphabetically by function name)
 # (order should follow README)
 #
-
-# The name of the current branch
-# Back-compatibility wrapper for when this function was defined here in
-# the plugin, before being pulled in to core lib/git.zsh as git_current_branch()
-# to fix the core -> git plugin dependency.
-function current_branch() {
-  git_current_branch
-}
-
-# Check for develop and similarly named branches
-function git_develop_branch() {
-  command git rev-parse --git-dir &>/dev/null || return
-  local branch
-  for branch in dev devel develop development; do
-    if command git show-ref -q --verify refs/heads/$branch; then
-      echo $branch
-      return 0
-    fi
-  done
-
-  echo develop
-  return 1
-}
-
-# Check if main exists and use instead of master
-function git_main_branch() {
-  command git rev-parse --git-dir &>/dev/null || return
-  local ref
-  for ref in refs/{heads,remotes/{origin,upstream}}/{main,trunk,mainline,default,stable,master}; do
-    if command git show-ref -q --verify $ref; then
-      echo ${ref:t}
-      return 0
-    fi
-  done
-
-  # If no main branch was found, fall back to master but return error
-  echo master
-  return 1
-}
 
 function grename() {
   if [[ -z "$1" || -z "$2" ]]; then
@@ -98,7 +54,6 @@ function ggpnp() {
     ggl "${*}" && ggp "${*}"
   fi
 }
-compdef _git ggpnp=git-checkout
 
 alias ggpur='ggu'
 alias g='git'
@@ -179,7 +134,6 @@ function gccd() {
   # otherwise parse the repo URI and use the last part as the directory
   [[ -d "$_" ]] && cd "$_" || cd "${${repo:t}%.git/#}"
 }
-compdef _git gccd=git-clone
 
 alias gcam='git commit --all --message'
 alias gcas='git commit --all --signoff'
@@ -206,21 +160,16 @@ alias gds='git diff --staged'
 alias gdw='git diff --word-diff'
 
 function gdv() { git diff -w "$@" | view - }
-compdef _git gdv=git-diff
 
 alias gdup='git diff @{upstream}'
 
 function gdnolock() {
   git diff "$@" ":(exclude)package-lock.json" ":(exclude)*.lock"
 }
-compdef _git gdnolock=git-diff
 
 alias gdt='git diff-tree --no-commit-id --name-only -r'
 alias gf='git fetch'
-# --jobs=<n> was added in git 2.8
-is-at-least 2.8 "$git_version" \
-  && alias gfa='git fetch --all --prune --jobs=10' \
-  || alias gfa='git fetch --all --prune'
+alias gfa='git fetch --all --prune --jobs=10'
 alias gfo='git fetch origin'
 alias gg='git gui citool'
 alias gga='git gui citool --amend'
@@ -243,7 +192,6 @@ function _git_log_prettily(){
     git log --pretty=$1
   fi
 }
-compdef _git _git_log_prettily=git-log
 
 alias glp='_git_log_prettily'
 alias glg='git log --stat'
@@ -269,7 +217,6 @@ function ggu() {
   [[ "$#" != 1 ]] && local b="$(git_current_branch)"
   git pull --rebase origin "${b:=$1}"
 }
-compdef _git ggu=git-checkout
 
 alias gprom='git pull --rebase origin $(git_main_branch)'
 alias gpromi='git pull --rebase=interactive origin $(git_main_branch)'
@@ -283,7 +230,6 @@ function ggl() {
     git pull origin "${b:=$1}"
   fi
 }
-compdef _git ggl=git-checkout
 
 alias gluc='git pull upstream $(git_current_branch)'
 alias glum='git pull upstream $(git_main_branch)'
@@ -294,23 +240,13 @@ function ggf() {
   [[ "$#" != 1 ]] && local b="$(git_current_branch)"
   git push --force origin "${b:=$1}"
 }
-compdef _git ggf=git-checkout
-
-alias gpf!='git push --force'
-is-at-least 2.30 "$git_version" \
-  && alias gpf='git push --force-with-lease --force-if-includes' \
-  || alias gpf='git push --force-with-lease'
 
 function ggfl() {
   [[ "$#" != 1 ]] && local b="$(git_current_branch)"
   git push --force-with-lease origin "${b:=$1}"
 }
-compdef _git ggfl=git-checkout
 
 alias gpsup='git push --set-upstream origin $(git_current_branch)'
-is-at-least 2.30 "$git_version" \
-  && alias gpsupf='git push --set-upstream origin $(git_current_branch) --force-with-lease --force-if-includes' \
-  || alias gpsupf='git push --set-upstream origin $(git_current_branch) --force-with-lease'
 alias gpv='git push --verbose'
 alias gpoat='git push origin --all && git push origin --tags'
 alias gpod='git push origin --delete'
@@ -324,7 +260,6 @@ function ggp() {
     git push origin "${b:=$1}"
   fi
 }
-compdef _git ggp=git-checkout
 
 alias gpu='git push upstream'
 alias grb='git rebase'
@@ -370,10 +305,6 @@ alias gstc='git stash clear'
 alias gstd='git stash drop'
 alias gstl='git stash list'
 alias gstp='git stash pop'
-# use the default stash push on git 2.13 and newer
-is-at-least 2.13 "$git_version" \
-  && alias gsta='git stash push' \
-  || alias gsta='git stash save'
 alias gsts='git stash show --patch'
 alias gst='git status'
 alias gss='git status --short'
@@ -402,22 +333,3 @@ alias gstu='gsta --include-untracked'
 alias gtl='gtl(){ git tag --sort=-v:refname -n --list "${1}*" }; noglob gtl'
 alias gk='\gitk --all --branches &!'
 alias gke='\gitk --all $(git log --walk-reflogs --pretty=%h) &!'
-
-unset git_version
-
-# Logic for adding warnings on deprecated aliases
-local old_alias new_alias
-for old_alias new_alias (
-  # TODO(2023-10-19): remove deprecated `git pull --rebase` aliases
-  gup     gpr
-  gupv    gprv
-  gupa    gpra
-  gupav   gprav
-  gupom   gprom
-  gupomi  gpromi
-); do
-  aliases[$old_alias]="
-    print -Pu2 \"%F{yellow}[oh-my-zsh] '%F{red}${old_alias}%F{yellow}' is a deprecated alias, using '%F{green}${new_alias}%F{yellow}' instead.%f\"
-    $new_alias"
-done
-unset old_alias new_alias
