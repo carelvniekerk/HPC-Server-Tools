@@ -37,7 +37,6 @@ then
 else
     # Load all base modules needed during dev and running and activate latest venv
     base &&
-    activate_cur_venv
 
     # Always start a dev tmux session for interactive sessions.
     if tmux has-session -t development_session 2>/dev/null

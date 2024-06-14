@@ -22,7 +22,6 @@
 
 # Define user information
 export USER_NAME="niekerk"
-export CURRENT_VENV=/gpfs/project/niekerk/src/UncertaintyCoTLLM/.venv/bin/activate
 export SETUP_COMPLETE=True
 export PYTHON_VERSION="3.11.4"
 export CUDA_VERSION="11.7.1"
