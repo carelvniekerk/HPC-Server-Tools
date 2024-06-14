@@ -56,7 +56,7 @@ export WANDB_MODE=offline
 export TMUX_TMPDIR="/gpfs/project/${USER_NAME}/.usr_tls/.tmux"
 
 # Setup the history file
-HISTFILE="~/.bash_history"
+HISTFILE="${HOME}/.bash_history"
 HISTSIZE=100000
 SAVEHIST=100000
 
