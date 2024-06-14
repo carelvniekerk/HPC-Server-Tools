@@ -31,16 +31,16 @@ if [ -f /etc/bashrc ]; then
 fi
 
 # Add Aliases
-if [ -f /gpfs/project/$USER_NAME/.usr_tls/scripts/aliases ]; then
-    source /gpfs/project/$USER_NAME/.usr_tls/scripts/aliases
+if [ -f /gpfs/project/${USER_NAME}/.usr_tls/scripts/aliases ]; then
+    source /gpfs/project/${USER_NAME}/.usr_tls/scripts/aliases
 fi
 
 # Initialise Command Prompt
-if [ -f /gpfs/project/$USER_NAME/.usr_tls/scripts/prompt ]; then
-    source /gpfs/project/$USER_NAME/.usr_tls/scripts/prompt
+if [ -f /gpfs/project/${USER_NAME}/.usr_tls/scripts/prompt ]; then
+    source /gpfs/project/${USER_NAME}/.usr_tls/scripts/prompt
 fi
 
 # Initialise CLI tools
-if [ -f /gpfs/project/$USER_NAME/.usr_tls/scripts/tools ]; then
-    source /gpfs/project/$USER_NAME/.usr_tls/scripts/tools
+if [ -f /gpfs/project/${USER_NAME}/.usr_tls/scripts/tools ]; then
+    source /gpfs/project/${USER_NAME}/.usr_tls/scripts/tools
 fi

@@ -19,4 +19,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source $(python /gpfs/project/$USER_NAME/.usr_tls/tools/get_venv.py -p $1)
+source $(python /gpfs/project/${USER_NAME}/.usr_tls/tools/get_venv.py -p $1)
