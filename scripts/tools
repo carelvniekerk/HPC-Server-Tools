@@ -95,3 +95,8 @@ cd() {
 if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/git.sh" ]; then
     source "/gpfs/project/${USER_NAME}/.usr_tls/tools/git.sh"
 fi
+
+# Add fzf reverse search
+if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/fzf_reverse_search.sh" ]; then
+    source "/gpfs/project/${USER_NAME}/.usr_tls/tools/fzf_reverse_search.sh"
+fi
