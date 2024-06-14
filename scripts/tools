@@ -72,3 +72,7 @@ get_gpu_indices() {
 gs() {
     python3 /gpfs/project/${USER_NAME}/.usr_tls/tools/gstat.py --id "$(get_gpu_indices)"
 }
+
+function als(){
+    alias | python3 "/gpfs/project/${USER_NAME}/.usr_tls/tools/aliases_cheatsheet.py" "$@"
+}
