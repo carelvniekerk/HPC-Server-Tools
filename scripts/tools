@@ -97,6 +97,10 @@ if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/git.sh" ]; then
 fi
 
 # Add fzf reverse search
-if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/fzf_reverse_search.sh" ]; then
-    source "/gpfs/project/${USER_NAME}/.usr_tls/tools/fzf_reverse_search.sh"
-fi
+source <(fzf --bash)
+
+HISTFILE="~/.bash_history"
+HISTSIZE=100000
+SAVEHIST=100000
+
+setopt appendhistory
