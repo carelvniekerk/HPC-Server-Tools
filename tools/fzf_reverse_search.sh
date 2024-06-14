@@ -31,10 +31,3 @@ bind -x '"\C-r": fzf_history_search'
 
 # Bind Up arrow key to the fuzzy find history search function
 bind '"\e[A": "\C-r"'
-
-# Ensure history is shared across sessions
-shopt -s histappend
-PROMPT_COMMAND="history -a; history -n; $PROMPT_COMMAND"
-
-# Load .bashrc to apply changes
-source ~/.bashrc
