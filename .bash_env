@@ -55,5 +55,10 @@ export WANDB_MODE=offline
 # Set location for tmux dir
 export TMUX_TMPDIR="/gpfs/project/${USER_NAME}/.usr_tls/.tmux"
 
+# Setup the history file
+HISTFILE="~/.bash_history"
+HISTSIZE=100000
+SAVEHIST=100000
+
 # Setup the path
 export PATH=$PATH:$HOME/.local/bin:$HOME/bin
