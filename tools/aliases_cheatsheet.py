@@ -136,17 +136,14 @@ def cheatsheet(lines):
 def pretty_print_group(key, aliases, highlight=None, only_groupname=False):
     if len(aliases) == 0:
         return
-    group_hl_formatter = lambda g, hl: termcolor.colored(hl, "yellow").join(
-        [termcolor.colored(part, "red") for part in ("[%s]" % g).split(hl)]
+    group_hl_formatter = lambda g, hl: colored(hl, "yellow").join(
+        [colored(part, "red") for part in ("[%s]" % g).split(hl)]
     )
-    alias_hl_formatter = lambda alias, hl: termcolor.colored(hl, "yellow").join(
-        [
-            termcolor.colored(part, "green")
-            for part in ("\t%s = %s" % alias[0:2]).split(hl)
-        ]
+    alias_hl_formatter = lambda alias, hl: colored(hl, "yellow").join(
+        [colored(part, "green") for part in ("\t%s = %s" % alias[0:2]).split(hl)]
     )
-    group_formatter = lambda g: termcolor.colored("[%s]" % g, "red")
-    alias_formatter = lambda alias: termcolor.colored("\t%s = %s" % alias[0:2], "green")
+    group_formatter = lambda g: colored("[%s]" % g, "red")
+    alias_formatter = lambda alias: colored("\t%s = %s" % alias[0:2], "green")
     if highlight and len(highlight) > 0:
         print(group_hl_formatter(key, highlight))
         if not only_groupname:
