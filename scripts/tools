@@ -73,9 +73,24 @@ gs() {
     python3 /gpfs/project/${USER_NAME}/.usr_tls/tools/gstat.py --id "$(get_gpu_indices)"
 }
 
+# List all aliases grouped by category
 function als(){
     alias | python3 "/gpfs/project/${USER_NAME}/.usr_tls/tools/aliases_cheatsheet.py" "$@"
 }
+
+# Custom cd function
+cd() {
+    # Call the built-in cd command with all passed arguments
+    builtin cd "$@" || return
+
+    # Try to run the activate command
+    if ! activate . 2>/dev/null; then
+        # If activate fails, run deactivate and set venv prompt to empty string
+        deactivate 2>/dev/null || true
+        export VIRTUAL_ENV_PROMPT=""
+    fi
+}
+
 
 # Add git aliases and tools
 if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/git.sh" ]; then
