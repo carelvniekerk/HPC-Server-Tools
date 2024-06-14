@@ -60,18 +60,19 @@ if __name__ == "__main__":
         jobs = get_jobs(os.environ.get("USER_NAME"))
 
         table = Table(title="Select a Job", box=box.SQUARE)
-        table.add_column("Job Number", style="cyan")
-        table.add_column("Job ID", style="magenta")
-        table.add_column("Name", style="green")
-        table.add_column("Job Status", style="yellow")
+        table.add_column("Job Number", style="blue")
+        table.add_column("Job ID", style="blue")
+        table.add_column("Name", style="blue")
+        table.add_column("Job Status", style="blue")
 
         for job in jobs:
-            status_color = "green" if job["status"] == "R" else "black"
+            row_style = "green" if job["status"] == "R" else "black"
             table.add_row(
                 str(job["job_num"]),
                 job["jobid"],
                 job["name"],
-                f"[{status_color}]{job['status']}[/{status_color}]",
+                job["status"],
+                style=row_style,
             )
 
         console.print(table)

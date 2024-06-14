@@ -22,8 +22,6 @@
 import os
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
-BASHENV_PATH = f"/gpfs/project/{os.environ.get('USER_NAME')}/.usr_tls/.bash_env"
-
 
 def get_venv_path(path: str) -> str:
     """Get the path to the virtual environment of a project"""
@@ -37,20 +35,6 @@ def get_venv_path(path: str) -> str:
     raise FileNotFoundError("No .venv found in the path")
 
 
-def save_as_current_venv(path: str) -> None:
-    """Save the path to the virtual environment as the current virtual environment in the .bashrc file"""
-    with open(BASHENV_PATH, "r") as f:
-        lines = f.readlines()
-
-    for i, line in enumerate(lines):
-        if line.startswith("export CURRENT_VENV="):
-            lines[i] = f"export CURRENT_VENV={path}\n"
-            break
-
-    with open(BASHENV_PATH, "w") as f:
-        f.writelines(lines)
-
-
 def main():
     """Get the path to the virtual environment of a project"""
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
@@ -61,7 +45,6 @@ def main():
 
     path = get_venv_path(path)
 
-    save_as_current_venv(f"{path}/bin/activate")
     print(f"{path}/bin/activate")
 
 
