@@ -96,19 +96,19 @@ function gbds() {
   git for-each-ref refs/heads/ "--format=%(refname:short)" | \
     while read branch; do
       local merge_base=$(git merge-base $default_branch $branch)
-      if [[ $(git cherry $default_branch $(git commit-tree $(git rev-parse $branch\^{tree}) -p $merge_base -m _)) = -* ]]; then
+      if [[ $(git cherry $default_branch $(git commit-tree $(git rev-parse $branch^{tree}) -p $merge_base -m _)) = -* ]]; then
         git branch -D $branch
       fi
     done
 }
 
-alias gbgd='LANG=C git branch --no-color -vv | grep ": gone\]" | cut -c 3- | awk '"'"'{print $1}'"'"' | xargs git branch -d'
-alias gbgD='LANG=C git branch --no-color -vv | grep ": gone\]" | cut -c 3- | awk '"'"'{print $1}'"'"' | xargs git branch -D'
+alias gbgd='LANG=C git branch --no-color -vv | grep ": gone]" | cut -c 3- | awk '"'"'{print $1}'"'"' | xargs git branch -d'
+alias gbgD='LANG=C git branch --no-color -vv | grep ": gone]" | cut -c 3- | awk '"'"'{print $1}'"'"' | xargs git branch -D'
 alias gbm='git branch --move'
 alias gbnm='git branch --no-merged'
 alias gbr='git branch --remote'
 alias ggsup='git branch --set-upstream-to=origin/$(git_current_branch)'
-alias gbg='LANG=C git branch -vv | grep ": gone\]"'
+alias gbg='LANG=C git branch -vv | grep ": gone]"'
 alias gco='git checkout'
 alias gcor='git checkout --recurse-submodules'
 alias gcb='git checkout -b'
@@ -181,7 +181,7 @@ alias glods='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgr
 alias glod='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset"'
 alias glola='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset" --all'
 alias glols='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset" --stat'
-alias glol='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset"'
+alias glol='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an)%Creset"'
 alias glo='git log --oneline --decorate'
 alias glog='git log --oneline --decorate --graph'
 alias gloga='git log --oneline --decorate --graph --all'
@@ -201,7 +201,7 @@ alias gfg='git ls-files | grep'
 alias gm='git merge'
 alias gma='git merge --abort'
 alias gmc='git merge --continue'
-alias gms="git merge --squash"
+alias gms='git merge --squash'
 alias gmom='git merge origin/$(git_main_branch)'
 alias gmum='git merge upstream/$(git_main_branch)'
 alias gmtl='git mergetool --no-prompt'
