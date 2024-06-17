@@ -29,7 +29,7 @@ function gunwipall() {
 
   # Check if a commit without "--wip--" was found and it's not the same as HEAD
   if [[ "$_commit" != "$(git rev-parse HEAD)" ]]; then
-    git reset $_commit || return 1
+    git reset "$_commit" || return 1
   fi
 }
 
@@ -62,7 +62,7 @@ alias gaa='git add --all'
 alias gapa='git add --patch'
 alias gau='git add --update'
 alias gav='git add --verbose'
-alias gwip='git add -A; git rm $(git ls-files --deleted) 2> /dev/null; git commit --no-verify --no-gpg-sign --message "--wip-- [skip ci]"'
+alias gwip='git add -A; git rm $(git ls-files --deleted) 2>/dev/null; git commit --no-verify --no-gpg-sign --message "--wip-- [skip ci]"'
 alias gam='git am'
 alias gama='git am --abort'
 alias gamc='git am --continue'
@@ -94,12 +94,12 @@ function gbds() {
   (( ! $? )) || default_branch=$(git_develop_branch)
 
   git for-each-ref refs/heads/ "--format=%(refname:short)" | \
-    while read branch; do
-      local merge_base=$(git merge-base $default_branch $branch)
-      if [[ $(git cherry $default_branch $(git commit-tree $(git rev-parse $branch^{tree}) -p $merge_base -m _)) = -* ]]; then
-        git branch -D $branch
-      fi
-    done
+  while read -r branch; do
+    local merge_base=$(git merge-base "$default_branch" "$branch")
+    if [[ $(git cherry "$default_branch" "$(git commit-tree "$(git rev-parse "$branch^{tree}")" -p "$merge_base" -m _)") = -* ]]; then
+      git branch -D "$branch"
+    fi
+  done
 }
 
 alias gbgd='LANG=C git branch --no-color -vv | grep ": gone]" | cut -c 3- | awk '"'"'{print $1}'"'"' | xargs git branch -d'
@@ -122,8 +122,6 @@ alias gclean='git clean --interactive -d'
 alias gcl='git clone --recurse-submodules'
 
 function gccd() {
-  setopt localoptions extendedglob
-
   # get repo URI from args based on valid formats: https://git-scm.com/docs/git-clone#URLS
   local repo="${${@[(r)(ssh://*|git://*|ftp(s)#://*|http(s)#://*|*@*)(.git/#)#]}:-$_}"
 
@@ -181,15 +179,15 @@ alias glods='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgr
 alias glod='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ad) %C(bold blue)<%an>%Creset"'
 alias glola='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset" --all'
 alias glols='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset" --stat'
-alias glol='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an)%Creset"'
+alias glol='git log --graph --pretty="%Cred%h%Creset -%C(auto)%d%Creset %s %Cgreen(%ar) %C(bold blue)<%an>%Creset"'
 alias glo='git log --oneline --decorate'
 alias glog='git log --oneline --decorate --graph'
 alias gloga='git log --oneline --decorate --graph --all'
 
 # Pretty log messages
 function _git_log_prettily(){
-  if ! [ -z $1 ]; then
-    git log --pretty=$1
+  if ! [ -z "$1" ]; then
+    git log --pretty="$1"
   fi
 }
 
@@ -330,6 +328,6 @@ alias gwtls='git worktree list'
 alias gwtmv='git worktree move'
 alias gwtrm='git worktree remove'
 alias gstu='gsta --include-untracked'
-alias gtl='gtl(){ git tag --sort=-v:refname -n --list "${1}*" }; noglob gtl'
-alias gk='\gitk --all --branches &!'
-alias gke='\gitk --all $(git log --walk-reflogs --pretty=%h) &!'
+alias gtl='git tag --sort=-v:refname -n --list "${1}*"'
+alias gk='gitk --all --branches &!'
+alias gke='gitk --all $(git log --walk-reflogs --pretty=%h) &!'
