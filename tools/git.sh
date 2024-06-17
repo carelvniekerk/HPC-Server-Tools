@@ -157,7 +157,9 @@ alias gdcw='git diff --cached --word-diff'
 alias gds='git diff --staged'
 alias gdw='git diff --word-diff'
 
-function gdv() { git diff -w "$@" | view - }
+function gdv() {
+    git diff -w "$@" | view - 
+}
 
 alias gdup='git diff @{upstream}'
 
