@@ -54,3 +54,6 @@ alias py="python3"
 
 # Tmux aliases
 alias dev-tmux="source /gpfs/project/${USER_NAME}/.usr_tls/tools/tmux_dev_session.sh"
+
+# FZF alias for previewing files
+alias fzf="fzf --preview 'cat -n {}' --preview-window=right:60%:wrap"

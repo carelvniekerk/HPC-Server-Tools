@@ -36,8 +36,7 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
     --color=prompt:#50fa7b,spinner:#ffb86c,pointer:#ff79c6,header:#6272a4
     --border="rounded" --border-label="" --preview-window="border-rounded" --padding=0
     --margin=1 --prompt=" " --marker="" --pointer="➜"
-    --separator="─" --scrollbar="│" --layout="reverse" --info="right"
-    --preview "cat -n {}" --preview-window=right:60%:wrap'
+    --separator="─" --scrollbar="│" --layout="reverse" --info="right"'
 
 # Setup Offline mode for Huggingface
 export HF_DATASETS_OFFLINE=1
