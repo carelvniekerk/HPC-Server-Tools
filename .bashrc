@@ -30,6 +30,11 @@ if [ -f /etc/bashrc ]; then
     . /etc/bashrc
 fi
 
+# Return and dont run remaining script if shell is not interactive
+if [[ $- != *i* ]]; then
+    return
+fi
+
 # Add Aliases
 if [ -f /gpfs/project/${USER_NAME}/.usr_tls/scripts/aliases ]; then
     source /gpfs/project/${USER_NAME}/.usr_tls/scripts/aliases

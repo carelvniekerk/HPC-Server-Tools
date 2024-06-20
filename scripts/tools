@@ -98,6 +98,5 @@ fi
 
 # Add fzf reverse search
 source <(fzf --bash)
-setopt appendhistory
 # Bind Up arrow key to the fuzzy find history search function using a key sequence
 bind '"\e[A": "\C-r"'
