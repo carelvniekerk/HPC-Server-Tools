@@ -52,7 +52,7 @@ fi
 
 # Add usefull poetry aliases and tools
 if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/poetry.sh" ]; then
-    source "gpfs/project/${USER_NAME}/.usr_tls/tools/poetry.sh"
+    source "/gpfs/project/${USER_NAME}/.usr_tls/tools/poetry.sh"
 fi
 
 # Add fzf reverse search
