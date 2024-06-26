@@ -26,3 +26,17 @@ alias pvinf='poetry env info'
 alias pvoff='poetry config virtualenvs.create false'
 alias pvrm='poetry env remove'
 alias pvu='poetry env use'
+
+# Custom cd function for auto venv changing
+cd() {
+    # Call the built-in cd command with all passed arguments
+    builtin cd "$@" || return
+
+    # Try to run the activate command
+    if ! activate . 2>/dev/null; then
+        # If activate fails, run deactivate and set venv prompt to empty string
+        deactivate 2>/dev/null || true
+        export VIRTUAL_ENV_PROMPT=""
+    fi
+}
+
