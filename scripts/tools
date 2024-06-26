@@ -42,7 +42,7 @@ function als(){
 
 # Add node and gpu stats tools
 if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/gstat.sh" ]; then
-    source "gpfs/project/${USER_NAME}/.usr_tls/tools/gstat.sh"
+    source "/gpfs/project/${USER_NAME}/.usr_tls/tools/gstat.sh"
 fi
 
 # Add git aliases and tools
