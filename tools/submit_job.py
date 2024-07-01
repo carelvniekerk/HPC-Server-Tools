@@ -65,9 +65,7 @@ def build_preamble(args: Namespace) -> str:
     system += (
         f":accelerator_model={args.accelerator_model}" if args.accelerator_model else ""
     )
-    system += (
-        f":arch={args.architecture}" if args.architecture else ""
-    )
+    system += f":arch={args.architecture}" if args.architecture else ""
     preamble += f"#PBS -l {system}\n"
     preamble += "#PBS -A 'DialSys'\n"
     preamble += f"#PBS -q '{args.queue}'\n" if args.queue else ""
@@ -106,14 +104,19 @@ def get_shell_commands(path: str, arguments: str = None) -> str:
 
 def get_python_commands(path: str, arguments: str) -> str:
     """Get the commands from a python script and add the arguments to the python command"""
-    arguments = (
-        [arg.split("--")[-1] for arg in arguments.split(" --") if arg]
-        if arguments
-        else []
-    )
-    arguments = [f"--{arg}" for arg in arguments]
+    if "--" not in arguments:
+        arguments_list: list = (
+            [arg.split("--")[-1] for arg in arguments.split(" --") if arg]
+            if arguments
+            else []
+        )
+        arguments_list = [f"--{arg}" for arg in arguments_list]
+    else:
+        arguments_list: list = (
+            [arg for arg in arguments.split(" ") if arg] if arguments else []
+        )
 
-    command = [f"python3 {path}"] + arguments
+    command = [f"python3 {path}"] + arguments_list
     command = [
         line + " \\" if i + 1 != len(command) else line
         for i, line in enumerate(command)
@@ -157,11 +160,26 @@ if __name__ == "__main__":
 
     parser.add_argument("--template", help="Job Queue", default="DSML_short")
     parser.add_argument("--queue", help="Job Queue", default=DEFAULTS.get("queue"))
-    parser.add_argument("--ncpus", help="Number of CPUs", default=DEFAULTS.get("ncpus"), type=int)
-    parser.add_argument("--memory", help="Amount of memory in GB", default=DEFAULTS.get("memory"), type=int)
-    parser.add_argument("--ngpus", help="Number of GPUs", default=DEFAULTS.get("ngpus"), type=int)
-    parser.add_argument("--accelerator_model", help="GPU model", default=DEFAULTS.get("accelerator_model"))
-    parser.add_argument("--architecture", help="CPU Architecture", default=DEFAULTS.get("architecture"))
+    parser.add_argument(
+        "--ncpus", help="Number of CPUs", default=DEFAULTS.get("ncpus"), type=int
+    )
+    parser.add_argument(
+        "--memory",
+        help="Amount of memory in GB",
+        default=DEFAULTS.get("memory"),
+        type=int,
+    )
+    parser.add_argument(
+        "--ngpus", help="Number of GPUs", default=DEFAULTS.get("ngpus"), type=int
+    )
+    parser.add_argument(
+        "--accelerator_model",
+        help="GPU model",
+        default=DEFAULTS.get("accelerator_model"),
+    )
+    parser.add_argument(
+        "--architecture", help="CPU Architecture", default=DEFAULTS.get("architecture")
+    )
     parser.add_argument(
         "--walltime",
         help="Walltime in format hh:mm:ss, eg 08:00:00",
@@ -176,13 +194,43 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.template in TEMPLATES:
-        args.queue = TEMPLATES[args.template].get("queue", DEFAULTS.get("queue")) if args.queue == DEFAULTS.get("queue") else args.queue
-        args.ncpus = TEMPLATES[args.template].get("ncpus", DEFAULTS.get("ncpus")) if args.ncpus == DEFAULTS.get("ncpus") else args.ncpus
-        args.memory = TEMPLATES[args.template].get("memory", DEFAULTS.get("memory")) if args.memory == DEFAULTS.get("memory") else args.memory
-        args.ngpus = TEMPLATES[args.template].get("ngpus", DEFAULTS.get("ngpus")) if args.ngpus == DEFAULTS.get("ngpus") else args.ngpus
-        args.accelerator_model = TEMPLATES[args.template].get("accelerator_model", DEFAULTS.get("accelerator_model")) if args.accelerator_model == DEFAULTS.get("accelerator_model") else args.accelerator_model
-        args.architecture = TEMPLATES[args.template].get("architecture", DEFAULTS.get("architecture")) if args.architecture == DEFAULTS.get("architecture") else args.architecture
-        args.walltime = TEMPLATES[args.template].get("walltime", DEFAULTS.get("walltime")) if args.walltime == DEFAULTS.get("walltime") else args.walltime
+        args.queue = (
+            TEMPLATES[args.template].get("queue", DEFAULTS.get("queue"))
+            if args.queue == DEFAULTS.get("queue")
+            else args.queue
+        )
+        args.ncpus = (
+            TEMPLATES[args.template].get("ncpus", DEFAULTS.get("ncpus"))
+            if args.ncpus == DEFAULTS.get("ncpus")
+            else args.ncpus
+        )
+        args.memory = (
+            TEMPLATES[args.template].get("memory", DEFAULTS.get("memory"))
+            if args.memory == DEFAULTS.get("memory")
+            else args.memory
+        )
+        args.ngpus = (
+            TEMPLATES[args.template].get("ngpus", DEFAULTS.get("ngpus"))
+            if args.ngpus == DEFAULTS.get("ngpus")
+            else args.ngpus
+        )
+        args.accelerator_model = (
+            TEMPLATES[args.template].get(
+                "accelerator_model", DEFAULTS.get("accelerator_model")
+            )
+            if args.accelerator_model == DEFAULTS.get("accelerator_model")
+            else args.accelerator_model
+        )
+        args.architecture = (
+            TEMPLATES[args.template].get("architecture", DEFAULTS.get("architecture"))
+            if args.architecture == DEFAULTS.get("architecture")
+            else args.architecture
+        )
+        args.walltime = (
+            TEMPLATES[args.template].get("walltime", DEFAULTS.get("walltime"))
+            if args.walltime == DEFAULTS.get("walltime")
+            else args.walltime
+        )
 
     # Build job script and save temporary file
     preamble = build_preamble(args)
