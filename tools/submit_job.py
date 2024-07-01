@@ -104,7 +104,7 @@ def get_shell_commands(path: str, arguments: str = None) -> str:
 
 def get_python_commands(path: str, arguments: str) -> str:
     """Get the commands from a python script and add the arguments to the python command"""
-    if "--" not in arguments:
+    if "--" in arguments:
         arguments_list: list = (
             [arg.split("--")[-1] for arg in arguments.split(" --") if arg]
             if arguments
