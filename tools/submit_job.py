@@ -58,7 +58,7 @@ def get_venv_path(path: str) -> str:
 
 def build_preamble(args: Namespace) -> str:
     """Build the preamble for the job script"""
-    preamble = "#!/bin/sh -l\n"
+    preamble = "#!/bin/bash -li\n"
     preamble += f"#PBS -l walltime={args.walltime}\n"
     system = f"select=1:ncpus={args.ncpus}:mem={args.memory}gb"
     system += f":ngpus={args.ngpus}" if args.ngpus > 0 else ""
