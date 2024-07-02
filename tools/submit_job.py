@@ -254,3 +254,4 @@ if __name__ == "__main__":
     job_id = [l for l in out.split("\n") if l][0]
 
     save_bash(job_script, os.path.join(LOGS_PATH, f"{job_id}.sh"))
+    print(f"Job {args.job_name} submitted successfully with ID {job_id}.")
