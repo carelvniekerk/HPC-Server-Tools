@@ -125,9 +125,9 @@ def get_python_commands(path: str, arguments: str) -> str:
 
     venv_path = get_venv_path(args.job_script)
     venv_path = os.path.join(venv_path, "bin/activate")
-    activate_venv = ["\n# Activate Virtual Environment", f"source {venv_path}\n"]
+    activate_venv = ["# Activate Virtual Environment", f"source {venv_path}\n"]
 
-    command = ["# Move to project folder", f"cd {ROOT}\n"] + activate_venv + command
+    command = ["\n# Move to project folder", f"cd {ROOT}\n"] + activate_venv + command
 
     return "\n".join(command)
 
