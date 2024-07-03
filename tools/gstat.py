@@ -17,21 +17,22 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-"""Display statistics"""
+"""Display statistics."""
 
-import time
-import curses
-import psutil
-import platform
 import argparse
+import curses
+import platform
+
+import psutil
 from gpustat import new_query
+
 
 def get_gpu_info(selected_gpus):
     gpu_stats = new_query()
     gpu_info = []
     for gpu in gpu_stats.gpus:
         if gpu.index in selected_gpus:
-            jobs = [p for p in gpu.processes if p['username'] != 'root']
+            jobs = [p for p in gpu.processes if p["username"] != "root"]
             info = {
                 "index": gpu.index,
                 "name": gpu.name,
@@ -40,26 +41,31 @@ def get_gpu_info(selected_gpus):
                 "memory_free": gpu.memory_free,
                 "temperature": gpu.temperature,
                 "utilization": gpu.utilization,
-                "jobs": jobs
+                "jobs": jobs,
             }
             gpu_info.append(info)
     return gpu_info
 
+
 def get_cpu_info():
     return psutil.cpu_percent(interval=1)
 
+
 def get_cpu_temp():
     try:
-        return psutil.sensors_temperatures()['coretemp'][0].current
+        return psutil.sensors_temperatures()["coretemp"][0].current
     except (KeyError, IndexError):
         return None
+
 
 def get_ram_info():
     ram = psutil.virtual_memory()
     return ram.total, ram.used, ram.free
 
+
 def get_cpu_architecture():
     return platform.processor()
+
 
 def color_value(stdscr, value, thresholds, colors):
     if value < thresholds[0]:
@@ -71,6 +77,7 @@ def color_value(stdscr, value, thresholds, colors):
     stdscr.attron(color)
     stdscr.addstr(f"{value}")
     stdscr.attroff(color)
+
 
 def display_info(stdscr, selected_gpus):
     curses.curs_set(0)
@@ -109,21 +116,36 @@ def display_info(stdscr, selected_gpus):
         stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
         stdscr.addstr("Utilisation: ")
         stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
-        color_value(stdscr, cpu_usage, [50, 75], [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)])
+        color_value(
+            stdscr,
+            cpu_usage,
+            [50, 75],
+            [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
+        )
         stdscr.addstr("%\n")
 
         if cpu_temp:
             stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
             stdscr.addstr("Temperature: ")
             stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
-            color_value(stdscr, cpu_temp, [60, 80], [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)])
+            color_value(
+                stdscr,
+                cpu_temp,
+                [60, 80],
+                [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
+            )
             stdscr.addstr(" C\n")
 
         # Display RAM info
         stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
         stdscr.addstr("RAM Usage: ")
         stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
-        color_value(stdscr, ram_used // (1024 ** 2), [ram_total // (1024 ** 2) * 0.5, ram_total // (1024 ** 2) * 0.75], [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)])
+        color_value(
+            stdscr,
+            ram_used // (1024**2),
+            [ram_total // (1024**2) * 0.5, ram_total // (1024**2) * 0.75],
+            [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
+        )
         stdscr.addstr(f"/{ram_total // (1024 ** 2)} MB\n")
 
         # Display GPU info
@@ -136,27 +158,46 @@ def display_info(stdscr, selected_gpus):
             stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
             stdscr.addstr(row + 1, 0, "Utilisation: ")
             stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
-            color_value(stdscr, gpu['utilization'], [50, 75], [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)])
+            color_value(
+                stdscr,
+                gpu["utilization"],
+                [50, 75],
+                [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
+            )
             stdscr.addstr("%\n")
-            
+
             stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
             stdscr.addstr(row + 2, 0, "Temperature: ")
             stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
-            color_value(stdscr, gpu['temperature'], [60, 80], [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)])
+            color_value(
+                stdscr,
+                gpu["temperature"],
+                [60, 80],
+                [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
+            )
             stdscr.addstr(" C\n")
-            
+
             stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
             stdscr.addstr(row + 3, 0, "Memory Usage: ")
             stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
-            color_value(stdscr, gpu['memory_used'], [gpu['memory_total'] * 0.5, gpu['memory_total'] * 0.75], [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)])
+            color_value(
+                stdscr,
+                gpu["memory_used"],
+                [gpu["memory_total"] * 0.5, gpu["memory_total"] * 0.75],
+                [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
+            )
             stdscr.addstr(f"/{gpu['memory_total']} MB\n")
 
             stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
             stdscr.addstr(row + 4, 0, "Non-root jobs:\n")
             stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
             stdscr.attron(curses.color_pair(6))
-            for job in gpu['jobs']:
-                stdscr.addstr(row + 5, 0, f"  - {job['username']} (Mem: {job['gpu_memory_usage']} MB)\n")
+            for job in gpu["jobs"]:
+                stdscr.addstr(
+                    row + 5,
+                    0,
+                    f"  - {job['username']} (Mem: {job['gpu_memory_usage']} MB)\n",
+                )
                 row += 1
             stdscr.attroff(curses.color_pair(6))
             row += 6
@@ -165,12 +206,19 @@ def display_info(stdscr, selected_gpus):
 
         # Exit if 'q' is pressed
         key = stdscr.getch()
-        if key == ord('q'):
+        if key == ord("q"):
             break
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Monitor CPU, RAM, and GPU usage")
-    parser.add_argument('--id', type=int, nargs='+', help='List of GPU indices to monitor', required=True)
+    parser.add_argument(
+        "--id",
+        type=int,
+        nargs="+",
+        help="List of GPU indices to monitor",
+        required=True,
+    )
     args = parser.parse_args()
 
     curses.wrapper(display_info, args.id)

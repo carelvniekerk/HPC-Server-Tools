@@ -17,23 +17,32 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-"""Open a log file stream for a job on the HPC cluster"""
+"""Open a log file stream for a job on the HPC cluster."""
 
 import os
+import subprocess
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
 from rich import box
 from rich.console import Console
 from rich.prompt import Prompt
 from rich.table import Table
-from tabulate import tabulate
 
 console = Console()
 
 
 def get_jobs(username: str) -> list[dict[str, str]]:
-    """Get a list of jobs for a user on the HPC cluster"""
-    jobs = os.popen(f"qstat -u {username}").read().split("\n")[5:-1]
+    """Get a list of jobs for a user on the HPC cluster."""
+    jobs = (
+        subprocess.run(
+            f"qstat -u {username}",
+            shell=True,
+            check=True,
+            capture_output=True,
+        )
+        .stdout.decode()
+        .split("\n")[5:-1]
+    )
     jobs = [job.split() for job in jobs]
 
     jobs = [
@@ -57,7 +66,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.jobid is None:
-        jobs = get_jobs(os.environ.get("USER_NAME"))
+        jobs = get_jobs(os.environ.get("USER_NAME", "none"))
 
         table = Table(title="Select a Job", box=box.SQUARE)
         table.add_column("Job Number", style="blue")
@@ -78,7 +87,7 @@ if __name__ == "__main__":
         console.print(table)
 
         found = False
-        job_id = None
+        job_id = 0
         while not found:
             job_id = Prompt.ask("[bold black]Job number[/bold black]")
             if job_id.isdigit() and int(job_id) < len(jobs):
@@ -91,16 +100,20 @@ if __name__ == "__main__":
     # Get host
     jobid = args.jobid.split(".")[0]
     host = (
-        os.popen(
-            f"qstat -f {jobid} -n | tail -n 1 | grep -o 'hilbert[0-9]*' | head -n1"
+        subprocess.run(
+            f"qstat -f {jobid} -n | tail -n 1 | grep -o 'hilbert[0-9]*' | head -n1",
+            shell=True,
+            check=True,
+            capture_output=True,
         )
-        .read()
+        .stdout.decode()
         .strip()
     )
 
     # Construct ssh command
     cmd = "OU" if args.output else "ER"
-    cmd = f'ssh -i ~/.ssh/id_int {host} "tail -f /var/spool/pbs/spool/{jobid}.hpc-batch.{cmd}"'
+    cmd = f"tail -f /var/spool/pbs/spool/{jobid}.hpc-batch.{cmd}"
+    cmd = f'ssh -i ~/.ssh/id_int {host} "{cmd}"'
 
     # Execute command
-    os.system(cmd)
+    subprocess.run(cmd, shell=True, check=True)
