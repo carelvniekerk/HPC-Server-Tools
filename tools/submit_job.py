@@ -150,7 +150,7 @@ def get_python_commands(path: str, arguments: str) -> str:
     try:
         project_poetry_root = find_project_root(Path(args.job_script))
 
-        relative_path = Path(args.job_script).relative_to(project_poetry_root)
+        relative_path = Path(args.job_script).resolve().relative_to(project_poetry_root)
         base_cmd = command[0]
 
         add_break = False
