@@ -68,6 +68,10 @@ def find_project_root(current_path: Path = Path.cwd()) -> Path:
         Path: The path to the project root directory.
 
     """
+    # Remove the filename if it ends with .py
+    if current_path.suffix == ".py":
+        current_path = current_path.parent
+
     current_path = current_path.resolve()
     if (current_path / "pyproject.toml").exists():
         return current_path
@@ -165,7 +169,7 @@ def get_python_commands(path: str, arguments: str) -> str:
 
         command = [
             "\n# Move to project folder",
-            f"cd {ROOT}/{relative_path}\n",
+            f"cd {project_poetry_root!s}\n",
             *command,
         ]
     except FileNotFoundError:
