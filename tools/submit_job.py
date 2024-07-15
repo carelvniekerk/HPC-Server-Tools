@@ -56,6 +56,30 @@ def get_venv_path(path: str) -> str:
     raise FileNotFoundError("No .venv found in the path")
 
 
+def find_project_root(current_path: Path = Path.cwd()) -> Path:
+    """Traverse to find the project root directory where the pyproject.toml is located.
+
+    Args:
+    ----
+        current_path (Path): The starting path. Default is the current working dir.
+
+    Returns:
+    -------
+        Path: The path to the project root directory.
+
+    """
+    current_path = current_path.resolve()
+    if (current_path / "pyproject.toml").exists():
+        return current_path
+
+    for parent in current_path.parents:
+        if (parent / "pyproject.toml").exists():
+            return parent
+
+    msg = "pyproject.toml not found in the current or any parent directories"
+    raise FileNotFoundError(msg)
+
+
 def build_preamble(args: Namespace) -> str:
     """Build the preamble for the job script"""
     preamble = "#!/bin/bash -li\n"
@@ -123,11 +147,35 @@ def get_python_commands(path: str, arguments: str) -> str:
     ]
     command = ["\t" + line if i != 0 else line for i, line in enumerate(command)]
 
-    venv_path = get_venv_path(args.job_script)
-    venv_path = os.path.join(venv_path, "bin/activate")
-    activate_venv = ["# Activate Virtual Environment", f"source {venv_path}\n"]
+    try:
+        project_poetry_root = find_project_root(Path(args.job_script))
 
-    command = ["\n# Move to project folder", f"cd {ROOT}\n"] + activate_venv + command
+        relative_path = Path(args.job_script).relative_to(project_poetry_root)
+        base_cmd = command[0]
+
+        add_break = False
+        if base_cmd.endswith("\\"):
+            add_break = True
+
+        base_cmd = f"poetry run python {relative_path!s}"
+        if add_break:
+            base_cmd += " \\"
+
+        command[0] = base_cmd
+
+        command = [
+            "\n# Move to project folder",
+            f"cd {ROOT}/{relative_path}\n",
+            *command,
+        ]
+    except FileNotFoundError:
+        venv_path = get_venv_path(args.job_script)
+        venv_path = os.path.join(venv_path, "bin/activate")
+        activate_venv = ["# Activate Virtual Environment", f"source {venv_path}\n"]
+
+        command = (
+            ["\n# Move to project folder", f"cd {ROOT}\n"] + activate_venv + command
+        )
 
     return "\n".join(command)
 
