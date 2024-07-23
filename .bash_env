@@ -23,7 +23,7 @@
 # Define user information
 export USER_NAME="niekerk"
 export SETUP_COMPLETE=True
-export PYTHON_VERSION="3.11.4"
+export PYTHON_VERSION="3.12.3"
 export CUDA_VERSION="11.7.1"
 
 # Setup colors for the ls command

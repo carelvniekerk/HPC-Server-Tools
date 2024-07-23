@@ -85,7 +85,7 @@ def find_project_root(current_path: Path = Path.cwd()) -> Path:
 
 
 def build_preamble(args: Namespace) -> str:
-    """Build the preamble for the job script"""
+    """Build the preamble for the job script."""
     preamble = "#!/bin/bash -li\n"
     preamble += f"#PBS -l walltime={args.walltime}\n"
     system = f"select=1:ncpus={args.ncpus}:mem={args.memory}gb"
@@ -180,6 +180,40 @@ def get_python_commands(path: str, arguments: str) -> str:
         command = (
             ["\n# Move to project folder", f"cd {ROOT}\n"] + activate_venv + command
         )
+
+    return "\n".join(command)
+
+
+def get_prun_commands(path: str, arguments: str) -> str:
+    """Create the prun command."""
+    if "--" in arguments:
+        arguments_list: list = (
+            [arg.split("--")[-1] for arg in arguments.split(" --") if arg]
+            if arguments
+            else []
+        )
+        arguments_list = [f"--{arg}" for arg in arguments_list]
+    else:
+        arguments_list: list = (
+            [arg for arg in arguments.split(" ") if arg] if arguments else []
+        )
+
+    project_poetry_root: Path = find_project_root(Path(path))
+    relative_path: Path = Path(path).resolve().relative_to(project_poetry_root)
+
+    script_name: str = relative_path.name.split("prun:", 1)[-1]
+    command: list = [f"poetry run {script_name}", *arguments_list]
+    command = [
+        line + " \\" if i + 1 != len(command) else line
+        for i, line in enumerate(command)
+    ]
+    command = ["\t" + line if i != 0 else line for i, line in enumerate(command)]
+
+    command = [
+        "\n# Move to project folder",
+        f"cd {project_poetry_root!s}\n",
+        *command,
+    ]
 
     return "\n".join(command)
 
@@ -286,7 +320,7 @@ if __name__ == "__main__":
 
     # Build job script and save temporary file
     preamble = build_preamble(args)
-
+    
     if ".sh" in args.job_script.name:
         commands = get_shell_commands(args.job_script, args.job_script_args)
     elif ".py" in args.job_script.name:
@@ -297,6 +331,8 @@ if __name__ == "__main__":
                 f"torchrun --standalone --nnodes=1 --nproc_per_node {args.ngpus}",
             )
             commands += f" \\\n\t--n_gpu {args.ngpus}"
+    elif "prun:" in args.job_script.name:
+        commands = get_prun_commands(args.job_script, args.job_script_args)
 
     job_script = preamble + "\n" + commands + "\n"
     job_path = save_bash(job_script)
