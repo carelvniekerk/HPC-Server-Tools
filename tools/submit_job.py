@@ -170,6 +170,8 @@ def get_python_commands(path: str, arguments: str) -> str:
         command = [
             "\n# Move to project folder",
             f"cd {project_poetry_root!s}\n",
+            "# Update poetry dependencies",
+            "poetry update\n",
             *command,
         ]
     except FileNotFoundError:
@@ -212,6 +214,8 @@ def get_prun_commands(path: str, arguments: str) -> str:
     command = [
         "\n# Move to project folder",
         f"cd {project_poetry_root!s}\n",
+        "# Update poetry dependencies",
+        "poetry update\n",
         *command,
     ]
 
@@ -320,7 +324,7 @@ if __name__ == "__main__":
 
     # Build job script and save temporary file
     preamble = build_preamble(args)
-    
+
     if ".sh" in args.job_script.name:
         commands = get_shell_commands(args.job_script, args.job_script_args)
     elif ".py" in args.job_script.name:
