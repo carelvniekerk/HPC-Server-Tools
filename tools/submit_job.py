@@ -36,7 +36,7 @@ with open(TEMPLATES, "r") as reader:
 DEFAULTS = {
     "queue": "DSML",
     "ncpus": 2,
-    "memory": None,
+    "memory": 32,
     "ngpus": 1,
     "accelerator_model": None,
     "architecture": None,
