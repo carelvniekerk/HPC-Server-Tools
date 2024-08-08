@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# Tool name: ziptools
+
+# Define compression function
+compress() {
+    local dir=$1
+    if [ -d "$dir" ]; then
+        local archive_name=$(basename "$dir").tar.xz
+        echo "Compressing $dir to $archive_name"
+        tar -cf - "$dir" | xz -T0 -9c > "$archive_name"
+        echo "Compression completed: $archive_name"
+    else
+        echo "Directory $dir does not exist."
+        exit 1
+    fi
+}
+
+# Define decompression function
+extract() {
+    local archive=$1
+    if [ -f "$archive" ]; then
+        echo "Extracting $archive"
+        tar xf "$archive"
+        echo "Extraction completed."
+    else
+        echo "Archive $archive does not exist."
+        exit 1
+    fi
+}
+
+# Function to display the usage of the tool
+usage() {
+    echo "Usage: ziptools {compress|extract} [directory|archive]"
+    echo "  compress [directory]   Compress the specified directory"
+    echo "  extract [archive]      Decompress the specified archive"
+    exit 1
+}
+
+# Check if xz is installed
+if ! command -v xz &> /dev/null
+then
+    echo "xz could not be found. Please install xz using 'brew install xz'."
+    exit 1
+fi
+
+# Check the number of arguments
+if [ $# -ne 2 ]; then
+    usage
+fi
+
+# Get the action (compress or extract) and the target
+ACTION=$1
+TARGET=$2
+shift
+
+case "$ACTION" in
+    compress)
+        compress "$TARGET"
+        ;;
+    extract)
+        extract "$TARGET"
+        ;;
+    *)
+        usage
+        ;;
+esac

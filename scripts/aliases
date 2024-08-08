@@ -57,3 +57,7 @@ alias dev-tmux="source /gpfs/project/${USER_NAME}/.usr_tls/tools/tmux_dev_sessio
 
 # FZF alias for previewing files
 alias fzf="fzf --preview 'cat -n {}' --preview-window=right:60%:wrap"
+
+# Adding aliases for compression and extraction using ziptools
+alias zc="ziptools compress"
+alias zx="ziptools extract"

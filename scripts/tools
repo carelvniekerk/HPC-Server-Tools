@@ -59,3 +59,8 @@ fi
 source <(fzf --bash)
 # Bind Up arrow key to the fuzzy find history search function using a key sequence
 bind '"\e[A": "\C-r"'
+
+# Add ziptools to the path
+if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/ziptools" ]; then
+    export PATH="/gpfs/project/${USER_NAME}/.usr_tls/tools:$PATH"
+fi
