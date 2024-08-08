@@ -17,7 +17,8 @@
   "CPU": {
     "queue": "",
     "ncpus": 16,
-    "memory": 64
+    "memory": 64,
+    "ngpus": 0
   },
   "GTX1080": {
     "queue": "",
