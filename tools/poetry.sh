@@ -43,25 +43,3 @@ cd() {
         export VIRTUAL_ENV_PROMPT=""
     fi
 }
-
-# Custom Poetry completion function
-_prun_completion() {
-    local cur prev commands pyproject_script_commands
-
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-
-    # Extract commands from pyproject.toml if it exists
-    if [[ -f "pyproject.toml" ]]; then
-        pyproject_script_commands=$(awk '/\[tool.poetry.scripts\]/ {found=1; next} /\[.*\]/ {found=0} found {print $1}' pyproject.toml | sed 's/=$//')
-        commands="${pyproject_script_commands}"
-    fi
-
-    # Add custom script completions for 'poetry run' or 'prun'
-    if [[ ${prev} == "prun" ]]; then
-        COMPREPLY+=($(compgen -W "${commands}" -- "$cur"))
-    fi
-}
-
-complete -F _prun_completion prun
