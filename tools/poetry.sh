@@ -77,6 +77,11 @@ _poetry_extended_completion() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
+    # Existing Poetry completions
+    if [[ ${prev} == "poetry" ]]; then
+        COMPREPLY=($(compgen -W "$(poetry completions bash)" -- "$cur"))
+    fi
+
     # Extract commands from pyproject.toml if it exists
     if [[ -f "pyproject.toml" ]]; then
         pyproject_script_commands=$(awk '/\[tool.poetry.scripts\]/ {found=1; next} /\[.*\]/ {found=0} found {print $1}' pyproject.toml | sed 's/=$//')
