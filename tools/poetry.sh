@@ -42,7 +42,7 @@ cd() {
 }
 
 # Custom Poetry completion function
-_poetry_extended_completion() {
+_prun_completion() {
     local cur prev commands pyproject_script_commands
 
     COMPREPLY=()
@@ -56,7 +56,9 @@ _poetry_extended_completion() {
     fi
 
     # Add custom script completions for 'poetry run' or 'prun'
-    if [[ ${prev} == "run" || ${prev} == "prun" || ${COMP_WORDS[COMP_CWORD-2]} == "poetry" ]]; then
+    if [[ ${prev} == "prun" ]]; then
         COMPREPLY+=($(compgen -W "${commands}" -- "$cur"))
     fi
 }
+
+complete -F _prun_completion prun
