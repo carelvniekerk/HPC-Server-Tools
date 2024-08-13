@@ -28,9 +28,6 @@ alias pvoff='poetry config virtualenvs.create false'
 alias pvrm='poetry env remove'
 alias pvu='poetry env use'
 
-# Setup auto-completion for Poetry
-source <(poetry completions bash)
-
 # Custom cd function for auto venv changing
 cd() {
     # Call the built-in cd command with all passed arguments
@@ -42,31 +39,6 @@ cd() {
         deactivate 2>/dev/null || true
         export VIRTUAL_ENV_PROMPT=""
     fi
-
-    # Check if there is a Poetry virtual environment or a pyproject.toml file
-    if [[ -d ".venv" ]] || poetry env info -p &>/dev/null || [[ -f "pyproject.toml" ]]; then
-        # Source the Poetry custom completion function
-        _poetry_extended_completion
-    fi
-}
-
-cd() {
-    # Call the built-in cd command with all passed arguments
-    builtin cd "$@" || return
-
-    # Try to run the activate command
-    if ! activate . 2>/dev/null; then
-        # If activate fails, run deactivate and set venv prompt to empty string
-        deactivate 2>/dev/null || true
-        export VIRTUAL_ENV_PROMPT=""
-    fi
-
-    # Check if there is a Poetry virtual environment or a pyproject.toml file
-    if poetry env info -p &>/dev/null && [[ -f "pyproject.toml" ]]; then
-        # Source the Poetry custom completion function
-        complete -F _poetry_extended_completion poetry
-        complete -F _poetry_extended_completion prun
-    fi
 }
 
 # Custom Poetry completion function
@@ -76,11 +48,6 @@ _poetry_extended_completion() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-
-    # Existing Poetry completions
-    if [[ ${prev} == "poetry" ]]; then
-        COMPREPLY=($(compgen -W "$(poetry completions bash)" -- "$cur"))
-    fi
 
     # Extract commands from pyproject.toml if it exists
     if [[ -f "pyproject.toml" ]]; then
