@@ -71,6 +71,9 @@ _poetry_run_completion() {
             run)
                 COMPREPLY=( $(compgen -c -- "${cur}") )
                 ;;
+            prun)
+                COMPREPLY=( $(compgen -c -- "${cur}") )
+                ;;
             *)
                 COMPREPLY=()
                 ;;
