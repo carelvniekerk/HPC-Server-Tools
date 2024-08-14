@@ -54,12 +54,15 @@ _poetry_run_completion() {
     # Find the dynamically generated poetry completion function
     poetry_completion_function=$(declare -F | awk '{print $3}' | grep -E '^_poetry_[0-9a-f]{16}_complete$')
 
-    if [[ "${words[0]}" == "prun" ]]; then
+    if [[ ${COMP_CWORD} -eq 1 && "${words[0]}" == "prun" ]]; then
         _prun_completion
     elif [[ ${COMP_CWORD} -eq 2 && "${words[1]}" == "run" ]]; then
         # Complete the task (script) names from pyproject.toml
         _prun_completion
     elif [[ ${COMP_CWORD} -gt 2 && "${words[1]}" == "run" ]]; then
+        # After completing `poetry run <task>`, revert to normal Bash completion
+        COMPREPLY=( $(compgen -o default -- "${cur}") )
+    elif [[ ${COMP_CWORD} -gt 1 && "${words[0]}" == "prun" ]]; then
         # After completing `poetry run <task>`, revert to normal Bash completion
         COMPREPLY=( $(compgen -o default -- "${cur}") )
     else
@@ -69,9 +72,6 @@ _poetry_run_completion() {
                 "$poetry_completion_function"
                 ;;
             run)
-                COMPREPLY=( $(compgen -c -- "${cur}") )
-                ;;
-            prun)
                 COMPREPLY=( $(compgen -c -- "${cur}") )
                 ;;
             *)
