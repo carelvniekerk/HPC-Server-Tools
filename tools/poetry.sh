@@ -28,8 +28,6 @@ alias pvoff='poetry config virtualenvs.create false'
 alias pvrm='poetry env remove'
 alias pvu='poetry env use'
 
-# Load poetry completions
-source <(poetry completions bash)
 
 # Custom cd function for auto venv changing
 cd() {
@@ -89,3 +87,6 @@ _prun_completion() {
 }
 
 complete -F _poetry_run_completion poetry
+
+# Load poetry completions
+source <(poetry completions bash)
