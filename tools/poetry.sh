@@ -43,3 +43,49 @@ cd() {
         export VIRTUAL_ENV_PROMPT=""
     fi
 }
+
+# Setup custom autocomplete
+_poetry_run_completion() {
+    local cur prev words cword
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    words=("${COMP_WORDS[@]}")
+    cword=$COMP_CWORD
+
+    # Find the dynamically generated poetry completion function
+    poetry_completion_function=$(declare -F | awk '{print $3}' | grep -E '^_poetry_[0-9a-f]{16}_complete$')
+
+    if [[ ${COMP_CWORD} -eq 2 && "${words[1]}" == "run" ]]; then
+        # Complete the task (script) names from pyproject.toml
+        _prun_completion
+    elif [[ ${COMP_CWORD} -gt 2 && "${words[1]}" == "run" ]]; then
+        # After completing `poetry run <task>`, revert to normal Bash completion
+        COMPREPLY=( $(compgen -o default -- "${cur}") )
+    else
+        case "${prev}" in
+            poetry)
+                # COMPREPLY=( $(compgen -W "run install add remove update" -- "${cur}") ) # Add other subcommands as needed
+                "$poetry_completion_function"
+                ;;
+            run)
+                COMPREPLY=( $(compgen -c -- "${cur}") )
+                ;;
+            *)
+                COMPREPLY=()
+                ;;
+        esac
+    fi
+}
+
+_prun_completion() {
+    local pyproject_script_commands=()
+
+    if [[ -f "pyproject.toml" ]]; then
+        pyproject_script_commands=($(awk '/\[tool.poetry.scripts\]/ {found=1; next} /\[.*\]/ {found=0} found && $0 !~ /^[[:space:]]*#/ {print $1}' pyproject.toml | sed "s/\(.*\)/\1/"))
+    fi
+
+    COMPREPLY=( $(compgen -W "${pyproject_script_commands[*]}" -- "${cur}") )
+}
+
+complete -F _poetry_run_completion poetry
