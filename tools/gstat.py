@@ -103,9 +103,6 @@ def display_info(stdscr, selected_gpus):
         cpu_arch = get_cpu_architecture()
         ram_total, ram_used, ram_free = get_ram_info()
 
-        # Get GPU info
-        gpu_info = get_gpu_info(selected_gpus)
-
         # Display CPU architecture
         stdscr.attron(curses.color_pair(5) | curses.A_BOLD)
         stdscr.addstr(0, 0, "CPU: ")
@@ -148,59 +145,63 @@ def display_info(stdscr, selected_gpus):
         )
         stdscr.addstr(f"/{ram_total // (1024 ** 2)} MB\n")
 
-        # Display GPU info
-        row = 5
-        for gpu in gpu_info:
-            stdscr.attron(curses.color_pair(5) | curses.A_BOLD)
-            stdscr.addstr(row, 0, f"GPU {gpu['index']}: {gpu['name']}\n")
-            stdscr.attroff(curses.color_pair(5) | curses.A_BOLD)
+        if selected_gpus:
+            # Get GPU info
+            gpu_info = get_gpu_info(selected_gpus)
 
-            stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
-            stdscr.addstr(row + 1, 0, "Utilisation: ")
-            stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
-            color_value(
-                stdscr,
-                gpu["utilization"],
-                [50, 75],
-                [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
-            )
-            stdscr.addstr("%\n")
+            # Display GPU info
+            row = 5
+            for gpu in gpu_info:
+                stdscr.attron(curses.color_pair(5) | curses.A_BOLD)
+                stdscr.addstr(row, 0, f"GPU {gpu['index']}: {gpu['name']}\n")
+                stdscr.attroff(curses.color_pair(5) | curses.A_BOLD)
 
-            stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
-            stdscr.addstr(row + 2, 0, "Temperature: ")
-            stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
-            color_value(
-                stdscr,
-                gpu["temperature"],
-                [60, 80],
-                [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
-            )
-            stdscr.addstr(" C\n")
-
-            stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
-            stdscr.addstr(row + 3, 0, "Memory Usage: ")
-            stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
-            color_value(
-                stdscr,
-                gpu["memory_used"],
-                [gpu["memory_total"] * 0.5, gpu["memory_total"] * 0.75],
-                [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
-            )
-            stdscr.addstr(f"/{gpu['memory_total']} MB\n")
-
-            stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
-            stdscr.addstr(row + 4, 0, "Non-root jobs:\n")
-            stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
-            stdscr.attron(curses.color_pair(6))
-            for job in gpu["jobs"]:
-                stdscr.addstr(
-                    row + 5,
-                    0,
-                    f"  - {job['username']} (Mem: {job['gpu_memory_usage']} MB)\n",
+                stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
+                stdscr.addstr(row + 1, 0, "Utilisation: ")
+                stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
+                color_value(
+                    stdscr,
+                    gpu["utilization"],
+                    [50, 75],
+                    [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
                 )
-                row += 1
-            stdscr.attroff(curses.color_pair(6))
-            row += 6
+                stdscr.addstr("%\n")
+
+                stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
+                stdscr.addstr(row + 2, 0, "Temperature: ")
+                stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
+                color_value(
+                    stdscr,
+                    gpu["temperature"],
+                    [60, 80],
+                    [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
+                )
+                stdscr.addstr(" C\n")
+
+                stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
+                stdscr.addstr(row + 3, 0, "Memory Usage: ")
+                stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
+                color_value(
+                    stdscr,
+                    gpu["memory_used"],
+                    [gpu["memory_total"] * 0.5, gpu["memory_total"] * 0.75],
+                    [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
+                )
+                stdscr.addstr(f"/{gpu['memory_total']} MB\n")
+
+                stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
+                stdscr.addstr(row + 4, 0, "Non-root jobs:\n")
+                stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
+                stdscr.attron(curses.color_pair(6))
+                for job in gpu["jobs"]:
+                    stdscr.addstr(
+                        row + 5,
+                        0,
+                        f"  - {job['username']} (Mem: {job['gpu_memory_usage']} MB)\n",
+                    )
+                    row += 1
+                stdscr.attroff(curses.color_pair(6))
+                row += 6
 
         stdscr.refresh()
 

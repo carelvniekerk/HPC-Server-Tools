@@ -35,5 +35,9 @@ get_gpu_indices() {
 
 # Function to show status of available GPUs
 gs() {
+    local gpu_indices=""
+    if [ -n "$CUDA_VISIBLE_DEVICES" ]; then
+        gpu_indices=$(get_gpu_indices)
+    fi
     python3 /gpfs/project/${USER_NAME}/.usr_tls/tools/gstat.py --id "$(get_gpu_indices)"
 }
