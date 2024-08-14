@@ -57,9 +57,6 @@ _poetry_run_completion() {
     if [[ ${COMP_CWORD} -eq 2 && "${words[1]}" == "run" ]]; then
         # Complete the task (script) names from pyproject.toml
         _prun_completion
-    elif [[ ${COMP_CWORD} -eq 1 && "${words[0]}" == "prun" ]]; then
-        # Complete the task (script) names from pyproject.toml
-        _prun_completion
     elif [[ ${COMP_CWORD} -gt 2 && "${words[1]}" == "run" ]]; then
         # After completing `poetry run <task>`, revert to normal Bash completion
         COMPREPLY=( $(compgen -o default -- "${cur}") )
@@ -89,5 +86,5 @@ _prun_completion() {
     COMPREPLY=( $(compgen -W "${pyproject_script_commands[*]}" -- "${cur}") )
 }
 
-complete -F _poetry_run_completion poetry
+complete -F _poetry_run_completion poetry prun
 
