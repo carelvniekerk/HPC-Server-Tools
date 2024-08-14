@@ -42,9 +42,6 @@ cd() {
     fi
 }
 
-# Load poetry completions
-source <(poetry completions bash)
-
 # Setup custom autocomplete
 _poetry_run_completion() {
     local cur prev words cword
