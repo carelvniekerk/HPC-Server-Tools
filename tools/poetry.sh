@@ -57,7 +57,7 @@ _poetry_run_completion() {
     if [[ ${COMP_CWORD} -eq 2 && "${words[1]}" == "run" ]]; then
         # Complete the task (script) names from pyproject.toml
         _prun_completion
-    if [[ ${COMP_CWORD} -eq 1 && "${words[0]}" == "prun" ]]; then
+    elif [[ ${COMP_CWORD} -eq 1 && "${words[0]}" == "prun" ]]; then
         # Complete the task (script) names from pyproject.toml
         _prun_completion
     elif [[ ${COMP_CWORD} -gt 2 && "${words[1]}" == "run" ]]; then
