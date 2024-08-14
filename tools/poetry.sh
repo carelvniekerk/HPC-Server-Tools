@@ -86,5 +86,5 @@ _prun_completion() {
     COMPREPLY=( $(compgen -W "${pyproject_script_commands[*]}" -- "${cur}") )
 }
 
-complete -F _poetry_run_completion poetry prun
-
+complete -F _poetry_run_completion poetry
+complete -F _prun_completion prun
