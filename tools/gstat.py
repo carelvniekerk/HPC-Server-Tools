@@ -218,7 +218,7 @@ if __name__ == "__main__":
         type=int,
         nargs="+",
         help="List of GPU indices to monitor",
-        required=True,
+        default=[]
     )
     args = parser.parse_args()
 
