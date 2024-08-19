@@ -14,7 +14,7 @@ tmux split-window -h
 
 # Resize the panes
 tmux select-pane -t 0
-tmux resize-pane -x $(echo "$(tmux display -p "#{window_width}")*0.8/1" | bc)
+tmux resize-pane -x $(echo "$(tmux display -p "#{window_width}")*0.85/1" | bc)
 
 # Run commands in each pane
 tmux select-pane -t 0
