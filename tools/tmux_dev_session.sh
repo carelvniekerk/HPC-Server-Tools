@@ -13,7 +13,7 @@ tmux rename-window -t $SESSION_NAME:0 'Main'
 tmux split-window -h
 
 # Resize the panes
-tmux select-pane -t 1
+tmux select-pane -t 0
 tmux resize-pane -x $(echo "$(tmux display -p "#{window_width}")*0.8/1" | bc)
 
 # Run commands in each pane
