@@ -36,8 +36,8 @@ function truncate_path_1 {
     echo $truncated
 }
 
-start_timer() {
-    timer=${timer:-$SECONDS}
+function timer_start {
+  timer=${timer:-$SECONDS}
 }
 
 function set_prompt {
@@ -112,5 +112,5 @@ function set_prompt {
     fi
 }
 
-trap 'start_timer' DEBUG
+trap 'timer_start' DEBUG
 PROMPT_COMMAND=set_prompt
