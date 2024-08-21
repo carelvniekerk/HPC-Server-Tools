@@ -114,3 +114,4 @@ function set_prompt {
 
 trap 'start_timer' DEBUG
 PROMPT_COMMAND=set_prompt
+export PS1="${PS1}"
