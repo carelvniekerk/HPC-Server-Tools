@@ -65,18 +65,18 @@ function set_prompt {
         local PS1_GIT="$(if git rev-parse --git-dir > /dev/null 2>&1; then echo "${GRAY} ${GRAY}$(git rev-parse --abbrev-ref HEAD) ${NO_COLOR}"; else echo ""; fi)"
         local PS1_PYTHON="\[\033[01;32m\]  v$(python --version 2>&1 | cut -d" " -f2)\[\033[00m\] "
 
-        # local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${NUM_JOBS}${NUM_FREE_GPUS}"
-        local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}"
-
         export last_command_time=${last_command_time:-0}
         local now=$(date +%s%3N)
         local duration=$((now - last_command_time))
         export last_command_time=$now
         if [ $duration -gt 2000 ]; then
-            local PS1_L1="\[\e[1;33m\][󰨏 $(echo "scale=0; $duration/1000" | bc)s]\[\e[0m\]"
+            local DUR="\[\e[1;33m\][󰨏 $(echo "scale=0; $duration/1000" | bc)s]\[\e[0m\]"
         else
-            local PS1_L1="\[\e[1;33m\]    \[\e[0m\]"
+            local DUR="\[\e[1;33m\]    \[\e[0m\]"
         fi
+
+        # local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${NUM_JOBS}${NUM_FREE_GPUS}"
+        local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${DIR}"
         
         # Current prompt length without colors (adjust this as needed)
         local prompt_length=${#PS1_L1}
