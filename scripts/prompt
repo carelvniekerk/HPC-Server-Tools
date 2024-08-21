@@ -73,7 +73,7 @@ function set_prompt {
         local PS1_PYTHON="\[\033[01;32m\]  v$(python --version 2>&1 | cut -d" " -f2)\[\033[00m\] "
 
         if [ -n "$command_start_time" ]; then
-            local duration=${duration:0}
+            local duration="${duration:0}"
             echo $duration
             if [ $duration -gt 2000 ]; then
                 local DUR="\[\e[1;33m\][󰨏 $(echo "scale=0; $duration/1000" | bc)s]\[\e[0m\]"
