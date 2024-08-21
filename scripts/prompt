@@ -67,10 +67,20 @@ function set_prompt {
 
         # local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${NUM_JOBS}${NUM_FREE_GPUS}"
         local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}"
+
+        export last_command_time=${last_command_time:-0}
+        local now=$(date +%s%3N)
+        local duration=$((now - last_command_time))
+        export last_command_time=$now
+        if [ $duration -gt 2000 ]; then
+            local PS1_L1="\[\e[1;33m\][󰨏 $(echo "scale=0; $duration/1000" | bc)s]\[\e[0m\]"
+        else
+            local PS1_L1="\[\e[1;33m\]    \[\e[0m\]"
+        fi
         
         # Current prompt length without colors (adjust this as needed)
         local prompt_length=${#PS1_L1}
-        local prompt_length=$((prompt_length - 84))
+        local prompt_length=$((prompt_length - 80))
         if [ "$PS1_GIT" != "" ]; then
             local prompt_length=$((prompt_length - 42))
         fi
