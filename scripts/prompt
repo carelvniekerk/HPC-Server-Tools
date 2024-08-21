@@ -76,7 +76,7 @@ function set_prompt {
         fi
 
         # local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${NUM_JOBS}${NUM_FREE_GPUS}"
-        local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${DIR}"
+        local PS1_L1="${PS1_HOST}${PS1_GIT}${PS1_PYTHON}${venv}${DUR}"
         
         # Current prompt length without colors (adjust this as needed)
         local prompt_length=${#PS1_L1}
