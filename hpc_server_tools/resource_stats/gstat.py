@@ -1,11 +1,14 @@
 # coding=utf-8
 # --------------------------------------------------------------------------------
-# Project: User tools for HPC
+# Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
 # Year: 2024
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
 # --------------------------------------------------------------------------------
+#
+# This code was generated with the help of AI writing assistants
+# including GitHub Copilot, ChatGPT, Bing Chat.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +20,8 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-"""Display statistics."""
+# limitations under the License.
+"""Display node statistics."""
 
 import argparse
 import curses
@@ -27,18 +31,18 @@ import psutil
 from gpustat import new_query
 
 
-def get_gpu_info(selected_gpus):
+def get_gpu_info(selected_gpus: list[str]) -> list[dict[str, int | str | float | list]]:
+    """Get GPU usage information."""
     gpu_stats = new_query()
-    gpu_info = []
+    gpu_info: list[dict[str, int | str | float | list]] = []
     for gpu in gpu_stats.gpus:
         if gpu.index in selected_gpus:
-            jobs = [p for p in gpu.processes if p["username"] != "root"]
+            jobs: list = [p for p in gpu.processes if p["username"] != "root"]
             info = {
                 "index": gpu.index,
                 "name": gpu.name,
                 "memory_total": gpu.memory_total,
                 "memory_used": gpu.memory_used,
-                "memory_free": gpu.memory_free,
                 "temperature": gpu.temperature,
                 "utilization": gpu.utilization,
                 "jobs": jobs,
@@ -47,27 +51,30 @@ def get_gpu_info(selected_gpus):
     return gpu_info
 
 
-def get_cpu_info():
-    return psutil.cpu_percent(interval=1)
-
-
-def get_cpu_temp():
+def get_cpu_info() -> tuple[float, float, int, int, str]:
+    """Get CPU and RAM usage information."""
+    cpu_usage: float = psutil.cpu_percent(interval=1)
     try:
-        return psutil.sensors_temperatures()["coretemp"][0].current
+        temperature: float = psutil.sensors_temperatures()["coretemp"][0].current  # type: ignore - This is only available if the system allows temperature monitoring
     except (KeyError, IndexError):
-        return None
+        temperature = -1.0
+
+    ram_stats = psutil.virtual_memory()
+    ram_total: int = ram_stats.total
+    ram_used: int = ram_stats.used
+
+    architecture = platform.processor()
+
+    return cpu_usage, temperature, ram_total, ram_used, architecture
 
 
-def get_ram_info():
-    ram = psutil.virtual_memory()
-    return ram.total, ram.used, ram.free
-
-
-def get_cpu_architecture():
-    return platform.processor()
-
-
-def color_value(stdscr, value, thresholds, colors):
+def color_value(
+    stdscr: curses._CursesWindow,
+    value: float,
+    thresholds: list[float],
+    colors: list,
+) -> None:
+    """Color the value based on thresholds."""
     if value < thresholds[0]:
         color = colors[0]
     elif value < thresholds[1]:
@@ -79,9 +86,10 @@ def color_value(stdscr, value, thresholds, colors):
     stdscr.attroff(color)
 
 
-def display_info(stdscr, selected_gpus):
+def display_info(stdscr: curses._CursesWindow, selected_gpus: list[str]) -> None:  # noqa: PLR0915
+    """Display CPU, RAM, and GPU usage information."""
     curses.curs_set(0)
-    stdscr.nodelay(1)
+    stdscr.nodelay(yes=True)
     stdscr.timeout(1000)
 
     curses.start_color()
@@ -98,10 +106,7 @@ def display_info(stdscr, selected_gpus):
         stdscr.clear()
 
         # Get CPU and RAM info
-        cpu_usage = get_cpu_info()
-        cpu_temp = get_cpu_temp()
-        cpu_arch = get_cpu_architecture()
-        ram_total, ram_used, ram_free = get_ram_info()
+        cpu_usage, cpu_temp, ram_total, ram_used, cpu_arch = get_cpu_info()
 
         # Display CPU architecture
         stdscr.attron(curses.color_pair(5) | curses.A_BOLD)
@@ -121,7 +126,7 @@ def display_info(stdscr, selected_gpus):
         )
         stdscr.addstr("%\n")
 
-        if cpu_temp:
+        if cpu_temp >= 0.0:
             stdscr.attron(curses.color_pair(6) | curses.A_BOLD)
             stdscr.addstr("Temperature: ")
             stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
@@ -147,7 +152,9 @@ def display_info(stdscr, selected_gpus):
 
         if selected_gpus:
             # Get GPU info
-            gpu_info = get_gpu_info(selected_gpus)
+            gpu_info: list[dict[str, int | str | float | list]] = get_gpu_info(
+                selected_gpus,
+            )
 
             # Display GPU info
             row = 5
@@ -161,7 +168,7 @@ def display_info(stdscr, selected_gpus):
                 stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
                 color_value(
                     stdscr,
-                    gpu["utilization"],
+                    gpu["utilization"],  # type: ignore - Utilization is always a float
                     [50, 75],
                     [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
                 )
@@ -172,7 +179,7 @@ def display_info(stdscr, selected_gpus):
                 stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
                 color_value(
                     stdscr,
-                    gpu["temperature"],
+                    gpu["temperature"],  # type: ignore - Temperature is always a float
                     [60, 80],
                     [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
                 )
@@ -183,8 +190,8 @@ def display_info(stdscr, selected_gpus):
                 stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
                 color_value(
                     stdscr,
-                    gpu["memory_used"],
-                    [gpu["memory_total"] * 0.5, gpu["memory_total"] * 0.75],
+                    gpu["memory_used"],  # type: ignore - Memory is always a float
+                    [gpu["memory_total"] * 0.5, gpu["memory_total"] * 0.75],  # type: ignore - Memory usage is always a int
                     [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
                 )
                 stdscr.addstr(f"/{gpu['memory_total']} MB\n")
@@ -193,7 +200,7 @@ def display_info(stdscr, selected_gpus):
                 stdscr.addstr(row + 4, 0, "Non-root jobs:\n")
                 stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
                 stdscr.attron(curses.color_pair(6))
-                for job in gpu["jobs"]:
+                for job in gpu["jobs"]:  # type: ignore - Jobs is always a list
                     stdscr.addstr(
                         row + 5,
                         0,
@@ -218,7 +225,7 @@ if __name__ == "__main__":
         type=int,
         nargs="+",
         help="List of GPU indices to monitor",
-        default=[]
+        default=[],
     )
     args = parser.parse_args()
 
