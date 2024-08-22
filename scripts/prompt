@@ -143,5 +143,5 @@ function set_prompt {
     unset timer
 }
 
-trap 'timer_start' DEBUG
+trap 'timer=${timer:-$(date +%s%3N)} && export TIMER_START=$timer' DEBUG
 PROMPT_COMMAND=set_prompt
