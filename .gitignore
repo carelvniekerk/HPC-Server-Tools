@@ -1,3 +1,4 @@
 .python-version
 poetry.lock
 .venv
+.DS_Store
