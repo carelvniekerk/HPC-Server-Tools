@@ -67,7 +67,7 @@ convert_millis() {
         result="0s"
     fi
 
-    echo "[$result]"
+    echo "$result"
 }
 
 function set_prompt {
@@ -114,16 +114,16 @@ function set_prompt {
         
         # Current prompt length without colors (adjust this as needed)
         local prompt_length=${#PS1_L1}
-        local prompt_length=$((prompt_length - 104))
+        local prompt_length=$((prompt_length - 106))
         if [ "$PS1_GIT" != "" ]; then
-            local prompt_length=$((prompt_length - 42))
+            local prompt_length=$((prompt_length - 44))
         fi
         
         # Get the current terminal width
         local term_width=$(tput cols)
         
         # Define your date format
-        local date_format="\[\e[1m\e[97m\]\D{%a %e %b %H:%M}\[\033[00m\]"
+        local date_format="\[\e[1m\e[97m\]󰭧 \D{%a %e %b %H:%M}\[\033[00m\]"
         
         # Calculate the padding needed
         local date_length=${#date_format}
