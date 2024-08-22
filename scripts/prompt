@@ -37,8 +37,10 @@ function truncate_path_1 {
 }
 
 function timer_start {
+    set -o functrace
     local timer=${timer:-$(date +%s%3N)}
     export TIMER_START=$timer
+    set +o functrace
 }
 
 convert_millis() {
@@ -141,6 +143,5 @@ function set_prompt {
     unset timer
 }
 
-set -o functrace
 trap 'timer_start' DEBUG
 PROMPT_COMMAND=set_prompt
