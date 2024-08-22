@@ -1,11 +1,14 @@
 # coding=utf-8
 # --------------------------------------------------------------------------------
-# Project: User tools for HPC
+# Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
 # Year: 2024
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
 # --------------------------------------------------------------------------------
+#
+# This code was generated with the help of AI writing assistants
+# including GitHub Copilot, ChatGPT, Bing Chat.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,35 +20,45 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-"""Get the path to the virtual environment of a project"""
+# limitations under the License.
+"""Get the path to the virtual environment of a project."""
 
-import os
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from pathlib import Path
 
 
-def get_venv_path(path: str) -> str:
-    """Get the path to the virtual environment of a project"""
+def get_venv_path(path: Path) -> Path:
+    """Get the path to the virtual environment of a project."""
+    path = path.resolve()
 
-    path = os.path.realpath(path)
-    for _ in range(len(path.split("/"))):
-        if os.path.exists(os.path.join(path, ".venv")):
-            return os.path.join(path, ".venv")
-        path = os.path.dirname(path)
+    if (path / ".venv").is_dir():
+        return path / ".venv"
 
-    raise FileNotFoundError("No .venv found in the path")
+    for parent in path.parents:
+        if (parent / ".venv").is_dir():
+            return parent / ".venv"
+
+    msg = "No .venv found in the path"
+    raise FileNotFoundError(msg)
 
 
-def main():
-    """Get the path to the virtual environment of a project"""
+def main() -> None:
+    """Get the path to the virtual environment of a project."""
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        "-p", "--path", type=str, default=".", help="Path to the project"
+        "-p",
+        "--path",
+        type=Path,
+        default=".",
+        help="Path to the project",
     )
-    path = parser.parse_args().path
+    path: Path = parser.parse_args().path
 
     path = get_venv_path(path)
 
-    print(f"{path}/bin/activate")
+    activation_script_path = path / "bin" / "activate"
+
+    print(activation_script_path)
 
 
 if __name__ == "__main__":
