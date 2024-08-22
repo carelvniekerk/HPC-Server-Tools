@@ -116,14 +116,14 @@ function set_prompt {
         local prompt_length=${#PS1_L1}
         local prompt_length=$((prompt_length - 106))
         if [ "$PS1_GIT" != "" ]; then
-            local prompt_length=$((prompt_length - 44))
+            local prompt_length=$((prompt_length - 42))
         fi
         
         # Get the current terminal width
         local term_width=$(tput cols)
         
         # Define your date format
-        local date_format="\[\e[1m\e[97m\]󰭧 \D{%a %e %b %H:%M}\[\033[00m\]"
+        local date_format="\[\e[1m\e[97m\]󰭧  \D{%a %e %b %H:%M}\[\033[00m\]"
         
         # Calculate the padding needed
         local date_length=${#date_format}
