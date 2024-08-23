@@ -32,26 +32,9 @@ from rich.columns import Columns
 from rich.console import Console
 from rich.table import Table
 
+from hpc_server_tools.configuration import COMPUTE_NODE_GROUPS, LOCAL_QUEUE, USER_NAME
+
 console: Console = Console()
-QUEUE: str = "DSML"
-USER_NAME: str = os.environ.get("USER_NAME", "")
-
-
-# Define node groups
-def get_node_list(prefix: str, indices: list[int]) -> list[str]:
-    """Generate a list of node names based on a prefix and a list of indices."""
-    return [f"{prefix}{i}" for i in indices]
-
-
-NODE_GROUPS: dict[str, list[str]] = {
-    "GTX2080-8GB": get_node_list("hilbert", [313, 314]),
-    "GTX1080TI-12GB": get_node_list("hilbert", [300 + i for i in range(13) if i != 8]),  # noqa: PLR2004
-    "TeslaT4-16GB": get_node_list("hilbert", [120, 121, 122, 123, 124]),
-    "A100-40GB": get_node_list("hilbert", [400, 401, 402, 403]),
-    "A100-80GB": get_node_list("hilbert", [404, 405, 406]),
-    "RTX8000-48GB": get_node_list("hilbert", [330, 331]),
-    "RTX6000-24GB": get_node_list("hilbert", [316, 317, 318, 319]),
-}
 
 
 def get_node_status(node_name: str) -> dict[str, str]:
@@ -139,7 +122,7 @@ def display_resources() -> None:
     # Display the job status
     console.print(
         subprocess.run(
-            ["qstat", "-a", QUEUE],  # noqa: S607
+            ["qstat", "-a", LOCAL_QUEUE],  # noqa: S607
             capture_output=True,
             check=True,
             shell=True,
@@ -162,7 +145,7 @@ def display_resources() -> None:
 
     tables: list[Table] = []
 
-    for group_name, nodes in NODE_GROUPS.items():
+    for group_name, nodes in COMPUTE_NODE_GROUPS.items():
         resources: dict[str, float] = aggregate_resources(nodes)
         table: Table = Table(
             title=f"{group_name} Resources",
