@@ -26,13 +26,20 @@
 from os import environ
 from pathlib import Path
 
-__all__ = ["PROJECTS_ROOT_DIR", "USER_ROOT_DIR", "LOGS_PATH"]
+__all__ = [
+    "USER_NAME",
+    "PROJECTS_ROOT_DIR",
+    "USER_ROOT_DIR",
+    "LOGS_PATH",
+    "HPC_TOOLS_PATH",
+]
 
 if "USER_NAME" not in environ:
     msg = "USER_NAME environment variable not set."
     raise KeyError(msg)
 
+USER_NAME: str = environ["USER_NAME"]
 PROJECTS_ROOT_DIR: Path = Path("/gpfs/project")
-USER_ROOT_DIR: Path = PROJECTS_ROOT_DIR / environ.get("USER_NAME", "")
+USER_ROOT_DIR: Path = PROJECTS_ROOT_DIR / USER_NAME
 LOGS_PATH: Path = USER_ROOT_DIR / "job_logs"
 HPC_TOOLS_PATH: Path = Path(__file__).parent.parent
