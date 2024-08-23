@@ -2,4 +2,4 @@
 poetry.lock
 .venv
 .DS_Store
-hpc_server_tools/__pycache__
+__pycache__
