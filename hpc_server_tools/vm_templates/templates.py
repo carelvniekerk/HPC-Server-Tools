@@ -31,7 +31,7 @@ from hpc_server_tools.vm_templates.types import (
 )
 
 __all__ = [
-    "DSML_short",
+    "DSML_SHORT",
     "DSML",
     "CPU",
     "GTX1080",
@@ -42,7 +42,7 @@ __all__ = [
     "A100_80GB",
 ]
 
-DSML_short: VMConfig = VMConfig(
+DSML_SHORT: VMConfig = VMConfig(
     queue=HPCQueue.DSML,
     walltime="4:00:00",
 )

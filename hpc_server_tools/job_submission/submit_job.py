@@ -23,48 +23,19 @@
 # limitations under the License.
 """Submit a job to the HPC cluster."""
 
-import os
 import subprocess
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from argparse import Namespace
 from pathlib import Path
 
+from hpc_server_tools.configuration import LOGS_PATH, USER_ROOT_DIR
+from hpc_server_tools.job_submission.vm_configuration import get_vm_config, parse_args
 from hpc_server_tools.poetry import get_venv_path
 from hpc_server_tools.vm_templates import (
-    A100_40GB,
-    A100_80GB,
-    CPU,
-    DSML,
-    GTX1080,
-    RTX6000,
-    RTX8000,
-    TESLAT4,
     AcceleratorModel,
     Architecture,
-    DSML_short,
     HPCQueue,
     VMConfig,
 )
-
-PROJECTS_ROOT_DIR: Path = Path("/gpfs/project")
-USER_ROOT_DIR: Path = PROJECTS_ROOT_DIR / os.environ.get("USER_NAME", "")
-LOGS_PATH: Path = USER_ROOT_DIR / "job_logs"
-
-VM_DEFAULTS = VMConfig(
-    queue=HPCQueue.DSML,
-    walltime="48:00:00",
-)
-TEMPLATES = {
-    "DSML_short": DSML_short,
-    "DSML": DSML,
-    "CUDA": DSML,
-    "CPU": CPU,
-    "GTX1080": GTX1080,
-    "RTX6000": RTX6000,
-    "RTX8000": RTX8000,
-    "A100_40GB": A100_40GB,
-    "A100_80GB": A100_80GB,
-    "TESLAT4": TESLAT4,
-}
 
 
 def find_project_root(current_path: Path | None = None) -> Path:
@@ -265,132 +236,8 @@ def save_bash(script: str, path: Path | None = None) -> Path:
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument("-n", "--job_name", help="Job Name", default="", type=str)
-    parser.add_argument(
-        "-s",
-        "--job_script",
-        help="Path to job script",
-        required=True,
-        type=Path,
-    )
-    parser.add_argument(
-        "-a",
-        "--job_script_args",
-        help="Arguments for the job script",
-        default="",
-        type=str,
-    )
-
-    parser.add_argument(
-        "--template",
-        help="Job Queue",
-        default="DSML_short",
-        type=str,
-    )
-    parser.add_argument(
-        "--queue",
-        help="Job Queue",
-        default=VM_DEFAULTS.queue,
-        type=HPCQueue,
-    )
-    parser.add_argument(
-        "--ncpus",
-        help="Number of CPUs",
-        default=VM_DEFAULTS.num_cpus,
-        type=int,
-    )
-    parser.add_argument(
-        "--memory",
-        help="Amount of memory in GB",
-        default=VM_DEFAULTS.memory,
-        type=int,
-    )
-    parser.add_argument(
-        "--ngpus",
-        help="Number of GPUs",
-        default=VM_DEFAULTS.num_gpus,
-        type=int,
-    )
-    parser.add_argument(
-        "--accelerator_model",
-        help="GPU model",
-        default=VM_DEFAULTS.accelerator_model,
-        type=AcceleratorModel,
-    )
-    parser.add_argument(
-        "--architecture",
-        help="CPU Architecture",
-        default=VM_DEFAULTS.architecture,
-        type=Architecture,
-    )
-    parser.add_argument(
-        "--walltime",
-        help="Walltime in format hh:mm:ss, eg 08:00:00",
-        default=VM_DEFAULTS.walltime,
-        type=str,
-    )
-
-    parser.add_argument("--view_error", help="View error log", action="store_true")
-    parser.add_argument("--view_log", help="View output log", action="store_true")
-    args = parser.parse_args()
-
-    if args.template in TEMPLATES:
-        queue: HPCQueue = (
-            TEMPLATES[args.template].queue
-            if args.queue == VM_DEFAULTS.queue
-            else args.queue
-        )
-        num_cpus: int = (
-            TEMPLATES[args.template].num_cpus
-            if args.ncpus == VM_DEFAULTS.num_cpus
-            else args.ncpus
-        )
-        memory: int = (
-            TEMPLATES[args.template].memory
-            if args.memory == VM_DEFAULTS.memory
-            else args.memory
-        )
-        num_gpus: int = (
-            TEMPLATES[args.template].num_gpus
-            if args.ngpus == VM_DEFAULTS.num_gpus
-            else args.ngpus
-        )
-        accelerator_model: AcceleratorModel = (
-            TEMPLATES[args.template].accelerator_model
-            if args.accelerator_model == VM_DEFAULTS.accelerator_model
-            else args.accelerator_model
-        )
-        architecture: Architecture = (
-            TEMPLATES[args.template].architecture
-            if args.architecture == VM_DEFAULTS.architecture
-            else args.architecture
-        )
-        walltime: str = (
-            TEMPLATES[args.template].walltime
-            if args.walltime == VM_DEFAULTS.walltime
-            else args.walltime
-        )
-
-        vm_config: VMConfig = VMConfig(
-            queue=queue,
-            num_cpus=num_cpus,
-            memory=memory,
-            num_gpus=num_gpus,
-            accelerator_model=accelerator_model,
-            architecture=architecture,
-            walltime=walltime,
-        )
-    else:
-        vm_config: VMConfig = VMConfig(
-            queue=args.queue,
-            num_cpus=args.ncpus,
-            memory=args.memory,
-            num_gpus=args.ngpus,
-            accelerator_model=args.accelerator_model,
-            architecture=args.architecture,
-            walltime=args.walltime,
-        )
+    args: Namespace = parse_args()
+    vm_config: VMConfig = get_vm_config(args)
 
     # Build job script and save temporary file
     preamble: str = build_preamble(vm_config, args.job_name)
@@ -411,7 +258,8 @@ if __name__ == "__main__":
         shell=True,
         capture_output=True,
         check=True,
-    )  # type: ignore  # noqa: PGH003
+        text=True,
+    ).stdout
     job_id: str = next(line for line in shell_return.split("\n") if line)
 
     job_script_path: Path = LOGS_PATH / f"{job_id}.sh"

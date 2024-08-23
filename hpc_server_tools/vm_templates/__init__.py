@@ -23,18 +23,7 @@
 # limitations under the License.
 """Templates for the Hillbert HPC VMs."""
 
-from hpc_server_tools.vm_templates.templates import (
-    A100_40GB,
-    A100_80GB,
-    CPU,
-    DEFAULT,
-    DSML,
-    GTX1080,
-    RTX6000,
-    RTX8000,
-    TESLAT4,
-    DSML_short,
-)
+from hpc_server_tools.vm_templates import templates
 from hpc_server_tools.vm_templates.types import (
     AcceleratorModel,
     Architecture,
@@ -42,19 +31,27 @@ from hpc_server_tools.vm_templates.types import (
     VMConfig,
 )
 
+TEMPLATES: dict[str, VMConfig] = {
+    template_name: getattr(templates, template_name)
+    for template_name in templates.__all__
+}
+
+JOB_DEFAULTS = VMConfig(
+    queue=HPCQueue.DSML,
+    walltime="48:00:00",
+)
+
+INTERACTIVE_DEFAULTS = VMConfig(
+    queue=HPCQueue.DSML,
+    walltime="8:00:00",
+)
+
 __all__ = [
-    "DEFAULT",
-    "DSML_short",
-    "DSML",
-    "CPU",
-    "GTX1080",
-    "TESLAT4",
-    "RTX6000",
-    "RTX8000",
-    "A100_40GB",
-    "A100_80GB",
+    "TEMPLATES",
+    "JOB_DEFAULTS",
+    "INTERACTIVE_DEFAULTS",
     "AcceleratorModel",
     "Architecture",
     "HPCQueue",
-    "VMTemplate",
+    "VMConfig",
 ]
