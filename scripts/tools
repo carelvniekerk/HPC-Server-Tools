@@ -45,8 +45,8 @@ function als(){
 }
 
 # Add node and gpu stats tools
-if [ -f "${HPC_TOOLS_PATH}/terminal_plugins/gstat.sh" ]; then
-    source "${HPC_TOOLS_PATH}/terminal_plugins/gstat.sh"
+if [ -f "${HPC_TOOLS_PATH}/resource_stats/gstat.sh" ]; then
+    source "${HPC_TOOLS_PATH}/resource_stats/gstat.sh"
 fi
 
 # Add git aliases and tools
