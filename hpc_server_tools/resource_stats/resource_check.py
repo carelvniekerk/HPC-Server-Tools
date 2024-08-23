@@ -40,7 +40,7 @@ def get_node_status(node_name: str) -> dict[str, str]:
     """Get the status of a node in the HPC cluster."""
     try:
         pbsnodes_return: str = subprocess.run(
-            ["pbsnodes", node_name],  # noqa: S607
+            f"pbsnodes {node_name}",
             shell=True,
             check=True,
             capture_output=True,
