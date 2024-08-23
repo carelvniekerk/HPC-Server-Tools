@@ -89,7 +89,7 @@ def color_value(
 def display_info(stdscr, selected_gpus: list[str]) -> None:  # noqa: PLR0915
     """Display CPU, RAM, and GPU usage information."""
     curses.curs_set(0)
-    stdscr.nodelay(yes=True)
+    stdscr.nodelay(1)
     stdscr.timeout(1000)
 
     curses.start_color()
