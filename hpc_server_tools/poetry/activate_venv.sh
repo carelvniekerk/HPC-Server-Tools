@@ -22,4 +22,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source $(python /gpfs/project/${USER_NAME}/.usr_tls/hpc_server_tools/get_venv_path.py -p $1)
+source $(python /gpfs/project/${USER_NAME}/.usr_tls/hpc_server_tools/poetry/get_venv_path.py -p $1)
