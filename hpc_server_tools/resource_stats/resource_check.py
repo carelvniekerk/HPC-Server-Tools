@@ -23,7 +23,6 @@
 # limitations under the License.
 """Check the resources available on the HPC cluster."""
 
-import os
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
@@ -122,7 +121,7 @@ def display_resources() -> None:
     # Display the job status
     console.print(
         subprocess.run(
-            ["qstat", "-a", LOCAL_QUEUE],  # noqa: S607
+            f"qstat -a {LOCAL_QUEUE}",
             capture_output=True,
             check=True,
             shell=True,
@@ -133,7 +132,7 @@ def display_resources() -> None:
     )
     console.print(
         subprocess.run(
-            ["qstat", "-u", USER_NAME],  # noqa: S607
+            f"qstat -u {USER_NAME}",
             capture_output=True,
             check=True,
             shell=True,
