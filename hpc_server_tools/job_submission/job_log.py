@@ -23,7 +23,6 @@
 # limitations under the License.
 """Open a log file stream for a job on the HPC cluster."""
 
-import os
 import subprocess
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 
@@ -101,10 +100,10 @@ if __name__ == "__main__":
     job_id: str = jobs[int(job_index)]["jobid"]  # type: ignore - jobid is always a string
 
     # Get host
-    jobid = args.jobid.split(".")[0]
+    job_id = job_id.split(".")[0]
     host = (
         subprocess.run(
-            f"qstat -f {jobid} -n | tail -n 1 | grep -o 'hilbert[0-9]*' | head -n1",
+            f"qstat -f {job_id} -n | tail -n 1 | grep -o 'hilbert[0-9]*' | head -n1",
             shell=True,
             check=True,
             capture_output=True,
@@ -115,7 +114,7 @@ if __name__ == "__main__":
 
     # Construct ssh command
     cmd: str = "OU" if args.output else "ER"
-    cmd = f"tail -f /var/spool/pbs/spool/{jobid}.hpc-batch.{cmd}"
+    cmd = f"tail -f /var/spool/pbs/spool/{job_id}.hpc-batch.{cmd}"
     cmd = f'ssh -i ~/.ssh/id_int {host} "{cmd}"'
 
     # Execute command
