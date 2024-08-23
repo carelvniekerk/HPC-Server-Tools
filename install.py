@@ -1,11 +1,14 @@
 # coding=utf-8
 # --------------------------------------------------------------------------------
-# Project: User tools for HPC
+# Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
 # Year: 2024
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
 # --------------------------------------------------------------------------------
+#
+# This code was generated with the help of AI writing assistants
+# including GitHub Copilot, ChatGPT, Bing Chat.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,29 +20,33 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
+# limitations under the License.
 """Configure the user tools for HPC project."""
 
-import os
+import ast
+import subprocess
+from pathlib import Path
+
+from hpc_server_tools.configuration import LOGS_PATH
 
 
-def setup_pip():
-    """Configure pip for hpc"""
+def setup_pip() -> None:
+    """Configure pip for hpc."""
     cmd1 = "pip config set global.trusted-host pypi.repo.test.hhu.de"
     cmd2 = "pip config set global.index-url http://pypi.repo.test.hhu.de/simple/"
-    os.system(cmd1)
-    os.system(cmd2)
+    subprocess.run(cmd1, shell=True, check=True)
+    subprocess.run(cmd2, shell=True, check=True)
 
 
-def main():
+def main() -> None:
     """Configure the user tools for HPC project."""
-    bashenv_path = os.path.dirname(os.path.abspath(__file__))
-    with open(os.path.join(bashenv_path, ".bash_env"), "r") as file:
-        bashenv = file.readlines()
+    bash_env_path: Path = Path(__file__).parent / ".bash_env"
+    bashenv: list[str] = bash_env_path.read_text().splitlines()
 
-    setup_complete = False
-    for i, line in enumerate(bashenv):
+    setup_complete: bool = False
+    for line in bashenv:
         if line.startswith("export SETUP_COMPLETE="):
-            setup_complete = eval(line.split("=")[1].strip().title())
+            setup_complete = ast.literal_eval(line.split("=")[1].strip().title())
             break
 
     if setup_complete:
@@ -54,8 +61,7 @@ def main():
                 bashenv[i] = f"export USER_NAME={user_name}\n"
                 break
 
-        if not os.path.isdir(os.path.join("/gpfs/project", user_name, "job_logs")):
-            os.makedirs(os.path.join("/gpfs/project", user_name, "job_logs"))
+        LOGS_PATH.mkdir(parents=True, exist_ok=True)
 
         setup_pip()
 
@@ -64,8 +70,7 @@ def main():
                 bashenv[i] = "export SETUP_COMPLETE=True\n"
                 break
 
-        with open(os.path.join(bashenv_path, ".bash_env"), "w") as writer:
-            writer.writelines(bashenv)
+        bash_env_path.write_text("\n".join(bashenv))
 
         print("Configuration complete. Please restart your terminal to apply changes.")
 

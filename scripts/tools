@@ -1,11 +1,14 @@
 # coding=utf-8
-# --------------------------------------------------------------------------------
-# Project: User tools for HPC
+#--------------------------------------------------------------------------------
+# Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
 # Year: 2024
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
-# --------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------
+#
+# This code was generated with the help of AI writing assistants
+# including GitHub Copilot, ChatGPT, Bing Chat.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,25 +39,26 @@ clear() (
 )
 
 # List all aliases grouped by category
+export HPC_TOOLS_PYTHON="/gpfs/project/${USER_NAME}/.usr_tls/.venv/bin/python"
 function als(){
-    alias | python3 "/gpfs/project/${USER_NAME}/.usr_tls/tools/aliases_cheatsheet.py" "$@"
+    alias | ${HPC_TOOLS_PYTHON} "${HPC_TOOLS_PATH}/terminal_plugins/aliases_cheatsheet.py" "$@"
 }
 
 # Add node and gpu stats tools
-if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/gstat.sh" ]; then
-    source "/gpfs/project/${USER_NAME}/.usr_tls/tools/gstat.sh"
+if [ -f "${HPC_TOOLS_PATH}/terminal_plugins/gstat.sh" ]; then
+    source "${HPC_TOOLS_PATH}/terminal_plugins/gstat.sh"
 fi
 
 # Add git aliases and tools
-if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/git.sh" ]; then
-    source "/gpfs/project/${USER_NAME}/.usr_tls/tools/git.sh"
+if [ -f "${HPC_TOOLS_PATH}/terminal_plugins/git.sh" ]; then
+    source "${HPC_TOOLS_PATH}/terminal_plugins/git.sh"
 fi
 
 # Add usefull poetry aliases and tools
 # Load poetry completions
 source <(poetry completions bash)
-if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/poetry.sh" ]; then
-    source "/gpfs/project/${USER_NAME}/.usr_tls/tools/poetry.sh"
+if [ -f "${HPC_TOOLS_PATH}/poetry/poetry.sh" ]; then
+    source "${HPC_TOOLS_PATH}/poetry/poetry.sh"
 fi
 
 # Add fzf reverse search
@@ -63,6 +67,6 @@ source <(fzf --bash)
 bind '"\e[A": "\C-r"'
 
 # Add ziptools to the path
-if [ -f "/gpfs/project/${USER_NAME}/.usr_tls/tools/ziptools" ]; then
-    export PATH="/gpfs/project/${USER_NAME}/.usr_tls/tools:$PATH"
+if [ -f "${HPC_TOOLS_PATH}/terminal_plugins/ziptools" ]; then
+    export PATH="${HPC_TOOLS_PATH}/terminal_plugins:$PATH"
 fi

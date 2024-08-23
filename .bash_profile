@@ -1,12 +1,15 @@
 # .bash_profile
 # coding=utf-8
-# --------------------------------------------------------------------------------
-# Project: User tools for HPC
+#--------------------------------------------------------------------------------
+# Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
 # Year: 2024
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
-# --------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------
+#
+# This code was generated with the help of AI writing assistants
+# including GitHub Copilot, ChatGPT, Bing Chat.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.

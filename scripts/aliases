@@ -1,11 +1,14 @@
 # coding=utf-8
-# --------------------------------------------------------------------------------
-# Project: User tools for HPC
-# Author: Carel van Niekerk
+#--------------------------------------------------------------------------------
+# Project: Hilbert HPC Server Tools
+# Author: Carel van Niekerk, Benjamin Ruppik
 # Year: 2024
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
-# --------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------
+#
+# This code was generated with the help of AI writing assistants
+# including GitHub Copilot, ChatGPT, Bing Chat.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,13 +31,14 @@ alias base_installers='load_python && load_cuda && load_installation_utils'
 alias base='load_python && load_cuda && load_tmux'
 
 # Aliases for user tools
-alias activate="source /gpfs/project/${USER_NAME}/.usr_tls/tools/activate_venv.sh"
-alias qi-setup="python3 /gpfs/project/${USER_NAME}/.usr_tls/tools/get_interactive.py"
-alias qi="source /gpfs/project/${USER_NAME}/.usr_tls/tools/qi.sh"
-alias qs="python3 /gpfs/project/${USER_NAME}/.usr_tls/tools/resource_check.py"
-alias submit_job="python3 /gpfs/project/${USER_NAME}/.usr_tls/tools/submit_job.py"
-alias cleanup_job_logs="python3 /gpfs/project/${USER_NAME}/.usr_tls/tools/cleanup_logs.py"
-alias job_log="python3 /gpfs/project/${USER_NAME}/.usr_tls/tools/job_log.py"
+export HPC_TOOLS_PYTHON="/gpfs/project/${USER_NAME}/.usr_tls/.venv/bin/python"
+alias activate="source ${HPC_TOOLS_PATH}/poetry/activate_venv.sh"
+alias qi-setup="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/get_interactive.py"
+alias qi="source ${HPC_TOOLS_PATH}/job_submission/qi.sh"
+alias qs="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/resource_stats/resource_check.py"
+alias submit_job="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/submit_job.py"
+alias cleanup_job_logs="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/cleanup_logs.py"
+alias job_log="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/job_log.py"
 
 # Some alias for convenience:
 alias home="cd /gpfs/project/${USER_NAME}"
@@ -53,7 +57,7 @@ alias src="source ~/.bash_profile"
 alias py="python3"
 
 # Tmux aliases
-alias dev-tmux="source /gpfs/project/${USER_NAME}/.usr_tls/tools/tmux_dev_session.sh"
+alias dev-tmux="source ${HPC_TOOLS_PATH}/terminal_plugins/tmux_dev_session.sh"
 
 # FZF alias for previewing files
 alias fzf="fzf --preview 'cat -n {}' --preview-window=right:60%:wrap"
