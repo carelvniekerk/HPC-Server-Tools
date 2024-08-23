@@ -59,12 +59,11 @@ get_gpu_indices() {
 # Function to show status of available GPUs
 gs() {
     local gpu_indices=""
-    local python_interpreter="/gpfs/project/${USER_NAME}/.usr_tls/.venv/bin/python"
     local gstat_script="/gpfs/project/${USER_NAME}/.usr_tls/hpc_server_tools/resource_stats/gstat.py"
     if [ -n "$CUDA_VISIBLE_DEVICES" ]; then
         gpu_indices=$(get_gpu_indices)
-        $python_interpreter $gstat_script --id "$(get_gpu_indices)"
+        /gpfs/project/${USER_NAME}/.usr_tls/.venv/bin/python $gstat_script --id "$(get_gpu_indices)"
     else
-        $python_interpreter $gstat_script
+        /gpfs/project/${USER_NAME}/.usr_tls/.venv/bin/python $gstat_script
     fi
 }

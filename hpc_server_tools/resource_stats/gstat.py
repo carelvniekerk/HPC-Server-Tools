@@ -69,7 +69,7 @@ def get_cpu_info() -> tuple[float, float, int, int, str]:
 
 
 def color_value(
-    stdscr: curses._CursesWindow,
+    stdscr,
     value: float,
     thresholds: list[float],
     colors: list,
@@ -86,7 +86,7 @@ def color_value(
     stdscr.attroff(color)
 
 
-def display_info(stdscr: curses._CursesWindow, selected_gpus: list[str]) -> None:  # noqa: PLR0915
+def display_info(stdscr, selected_gpus: list[str]) -> None:  # noqa: PLR0915
     """Display CPU, RAM, and GPU usage information."""
     curses.curs_set(0)
     stdscr.nodelay(yes=True)
