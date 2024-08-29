@@ -82,7 +82,7 @@ def build_preamble(vm_config: VMConfig, job_name: str) -> str:
     )
     machine_configuration += (
         f":accelerator_model={vm_config.accelerator_model.value}"
-        if args.accelerator_model != AcceleratorModel.DEFAULT
+        if vm_config.accelerator_model != AcceleratorModel.DEFAULT
         else ""
     )
     machine_configuration += (
