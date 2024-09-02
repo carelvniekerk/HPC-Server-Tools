@@ -26,6 +26,7 @@
 import subprocess
 from argparse import Namespace
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from hpc_server_tools.configuration import LOGS_PATH, USER_ROOT_DIR
 from hpc_server_tools.job_submission.vm_configuration import get_vm_config, parse_args
@@ -250,17 +251,19 @@ if __name__ == "__main__":
         commands = get_prun_commands(args.job_script, args.job_script_args)
 
     job_script: str = preamble + "\n" + commands + "\n"
-    job_path: Path = save_bash(job_script)
 
-    # Submit job
-    shell_return: str = subprocess.run(
-        f"qsub {job_path}",
-        shell=True,
-        capture_output=True,
-        check=True,
-        text=True,
-    ).stdout
-    job_id: str = next(line for line in shell_return.split("\n") if line)
+    with NamedTemporaryFile(mode="w", suffix=".sh", delete=True) as temp_file:
+        temp_file.write(job_script)
+
+        # Submit job
+        shell_return: str = subprocess.run(
+            f"qsub {temp_file.name}",
+            shell=True,
+            capture_output=True,
+            check=True,
+            text=True,
+        ).stdout
+        job_id: str = next(line for line in shell_return.split("\n") if line)
 
     job_script_path: Path = LOGS_PATH / f"{job_id}.sh"
     save_bash(job_script, job_script_path)

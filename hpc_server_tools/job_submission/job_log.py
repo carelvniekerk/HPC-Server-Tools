@@ -97,7 +97,7 @@ if __name__ == "__main__":
         else:
             console.print("[bold red]Invalid job number[/bold red]")
 
-    job_id: str = jobs[int(job_index)]["jobid"]  # type: ignore - jobid is always a string
+    job_id: str = jobs[int(job_index)]["jobid"]  # type: ignore[assignment]
 
     # Get host
     job_id = job_id.split(".")[0]
