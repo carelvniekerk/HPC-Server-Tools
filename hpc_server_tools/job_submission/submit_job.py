@@ -254,6 +254,7 @@ if __name__ == "__main__":
 
     with NamedTemporaryFile(mode="w", suffix=".sh", delete=True) as temp_file:
         temp_file.write(job_script)
+        temp_file.flush()
 
         # Submit job
         shell_return: str = subprocess.run(
