@@ -23,6 +23,7 @@
 # limitations under the License.
 """Submit a job to the HPC cluster."""
 
+import shlex
 import subprocess
 from argparse import Namespace
 from pathlib import Path
@@ -128,6 +129,15 @@ def get_shell_commands(path: Path, arguments: str = "") -> str:
     return "\n".join(commands)
 
 
+def add_quotes_to_str_argument(argument: str, seperator: str = "=") -> str:
+    """Add quotes to string arguments."""
+    if " " not in argument:
+        return argument
+
+    key, value = argument.split(seperator, 1)
+    return f'{key}{seperator}"{value}"'
+
+
 def get_python_commands(path: Path, arguments: str) -> str:
     """Get the commands from a python script and add the arguments."""
     if "--" in arguments:
@@ -138,9 +148,8 @@ def get_python_commands(path: Path, arguments: str) -> str:
         )
         arguments_list = [f"--{arg}" for arg in arguments_list]
     else:
-        arguments_list = (
-            [arg for arg in arguments.split(" ") if arg] if arguments else []
-        )
+        arguments_list = shlex.split(arguments) if arguments else []
+        arguments_list = [add_quotes_to_str_argument(arg) for arg in arguments_list]
 
     command: list[str] = [f"python3 {path}", *arguments_list]
     command = [
@@ -200,9 +209,8 @@ def get_prun_commands(path: Path, arguments: str) -> str:
         )
         arguments_list = [f"--{arg}" for arg in arguments_list]
     else:
-        arguments_list = (
-            [arg for arg in arguments.split(" ") if arg] if arguments else []
-        )
+        arguments_list = shlex.split(arguments) if arguments else []
+        arguments_list = [add_quotes_to_str_argument(arg) for arg in arguments_list]
 
     project_poetry_root: Path = find_project_root(path)
     relative_path: Path = path.resolve().relative_to(project_poetry_root)
