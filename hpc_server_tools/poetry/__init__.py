@@ -1,12 +1,11 @@
-# .bash_profile
 # coding=utf-8
-#--------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
 # Year: 2024
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
-#--------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 #
 # This code was generated with the help of AI writing assistants
 # including GitHub Copilot, ChatGPT, Bing Chat.
@@ -22,30 +21,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Poetry related tools."""
 
-# Get the aliases and functions
-if [ -f ~/.bashrc ]; then
-    source ~/.bashrc
-fi
+from hpc_server_tools.poetry.get_venv_path import get_venv_path
 
-# Load the base environment
-home
-
-if [[ $(hostname) == *"login"* ]]
-then
-    # Load only python and display status on login node (Python is needed for the utils)
-    load_python &&
-    clear &&
-    qs
-else
-    # Load all base modules needed during dev and running and activate latest venv
-    base &&
-
-    # Always start a dev tmux session for interactive sessions.
-    if tmux has-session -t development_session 2>/dev/null
-    then
-        echo ""
-    else
-        dev-tmux
-    fi
-fi
+__all__ = ["get_venv_path"]

@@ -1,12 +1,11 @@
-# .bash_profile
 # coding=utf-8
-#--------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 # Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
 # Year: 2024
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
-#--------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
 #
 # This code was generated with the help of AI writing assistants
 # including GitHub Copilot, ChatGPT, Bing Chat.
@@ -22,30 +21,37 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Templates for the Hillbert HPC VMs."""
 
-# Get the aliases and functions
-if [ -f ~/.bashrc ]; then
-    source ~/.bashrc
-fi
+from hpc_server_tools.vm_templates import templates
+from hpc_server_tools.vm_templates.types import (
+    AcceleratorModel,
+    Architecture,
+    HPCQueue,
+    VMConfig,
+)
 
-# Load the base environment
-home
+TEMPLATES: dict[str, VMConfig] = {
+    template_name: getattr(templates, template_name)
+    for template_name in templates.__all__
+}
 
-if [[ $(hostname) == *"login"* ]]
-then
-    # Load only python and display status on login node (Python is needed for the utils)
-    load_python &&
-    clear &&
-    qs
-else
-    # Load all base modules needed during dev and running and activate latest venv
-    base &&
+JOB_DEFAULTS = VMConfig(
+    queue=HPCQueue.DSML,
+    walltime="48:00:00",
+)
 
-    # Always start a dev tmux session for interactive sessions.
-    if tmux has-session -t development_session 2>/dev/null
-    then
-        echo ""
-    else
-        dev-tmux
-    fi
-fi
+INTERACTIVE_DEFAULTS = VMConfig(
+    queue=HPCQueue.DSML,
+    walltime="8:00:00",
+)
+
+__all__ = [
+    "TEMPLATES",
+    "JOB_DEFAULTS",
+    "INTERACTIVE_DEFAULTS",
+    "AcceleratorModel",
+    "Architecture",
+    "HPCQueue",
+    "VMConfig",
+]

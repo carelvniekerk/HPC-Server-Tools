@@ -1,11 +1,14 @@
 # coding=utf-8
-# --------------------------------------------------------------------------------
-# Project: User tools for HPC
+#--------------------------------------------------------------------------------
+# Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
 # Year: 2024
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
-# --------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------
+#
+# This code was generated with the help of AI writing assistants
+# including GitHub Copilot, ChatGPT, Bing Chat.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,4 +22,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-source $(python /gpfs/project/${USER_NAME}/.usr_tls/tools/get_venv.py -p $1)
+source $(python /gpfs/project/${USER_NAME}/.usr_tls/hpc_server_tools/poetry/get_venv_path.py -p $1)

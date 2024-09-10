@@ -1,0 +1,27 @@
+[tool.ruff]
+extend = "~/.config/ruff/config.toml"
+target-version = "py312"
+
+[tool.poetry]
+name = "hpc-server-tools"
+version = "0.1.0"
+description = "Server Side Toolkit for HHU HPC Hilbert"
+authors = ["Carel van Niekerk, Benjamin Ruppik"]
+license = "Apache 2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+psutil = "^6.0.0"
+gpustat = "^1.1.1"
+rich = "^13.7.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Use HHU PyPI repository (Needed for HPC)
+[[tool.poetry.source]]
+name = "hhu"
+url = "http://pypi.repo.test.hhu.de/simple/"

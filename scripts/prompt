@@ -1,11 +1,14 @@
 # coding=utf-8
-# --------------------------------------------------------------------------------
-# Project: User tools for HPC
+#--------------------------------------------------------------------------------
+# Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
 # Year: 2024
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
-# --------------------------------------------------------------------------------
+#--------------------------------------------------------------------------------
+#
+# This code was generated with the help of AI writing assistants
+# including GitHub Copilot, ChatGPT, Bing Chat.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,8 +21,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 # Setup command line
+
 function truncate_path_2 {
     # Get the current working directory
     local pwd=$(pwd)
@@ -34,13 +37,6 @@ function truncate_path_1 {
     # Use parameter expansion to keep only the last two directories
     local truncated=$(echo $pwd | awk -F/ '{n = split($0,a,"/"); print a[n];}')
     echo $truncated
-}
-
-function timer_start {
-    set -o functrace
-    local timer=${timer:-$(date +%s%3N)}
-    export TIMER_START=$timer
-    set +o functrace
 }
 
 convert_millis() {

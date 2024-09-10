@@ -1,5 +1,29 @@
-#!/usr/bin/env python3
-from __future__ import print_function
+# coding=utf-8
+# --------------------------------------------------------------------------------
+# Project: Hilbert HPC Server Tools
+# Author: Carel van Niekerk
+# Year: 2024
+# Group: Dialogue Systems and Machine Learning Group
+# Institution: Heinrich Heine University Düsseldorf
+# --------------------------------------------------------------------------------
+#
+# This code was adapted from the aliases oh-my-zsh plugin.
+#
+# This code was generated with the help of AI writing assistants
+# including GitHub Copilot, ChatGPT, Bing Chat.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Aliases Cheatsheet - Tool to search and print aliases in a cheatsheet format."""
 
 import argparse
 import itertools
@@ -10,18 +34,19 @@ __ALL__ = ["colored", "cprint"]
 
 VERSION = (1, 1, 0)
 
-ATTRIBUTES = dict(
+ATTRIBUTES: dict[str, int] = dict(
     list(
         zip(
             ["bold", "dark", "", "underline", "blink", "", "reverse", "concealed"],
             list(range(1, 9)),
-        )
-    )
+            strict=True,
+        ),
+    ),
 )
 del ATTRIBUTES[""]
 
 
-HIGHLIGHTS = dict(
+HIGHLIGHTS: dict[str, int] = dict(
     list(
         zip(
             [
@@ -35,12 +60,13 @@ HIGHLIGHTS = dict(
                 "on_white",
             ],
             list(range(40, 48)),
-        )
-    )
+            strict=True,
+        ),
+    ),
 )
 
 
-COLORS = dict(
+COLORS: dict[str, int] = dict(
     list(
         zip(
             [
@@ -54,15 +80,21 @@ COLORS = dict(
                 "white",
             ],
             list(range(30, 38)),
-        )
-    )
+            strict=True,
+        ),
+    ),
 )
 
 
 RESET = "\033[0m"
 
 
-def colored(text, color=None, on_color=None, attrs=None):
+def colored(
+    text: str,
+    color: str | None = None,
+    on_color: str | None = None,
+    attrs: list[str] | None = None,
+):
     """Colorize text.
 
     Available text colors:
@@ -75,11 +107,13 @@ def colored(text, color=None, on_color=None, attrs=None):
         bold, dark, underline, blink, reverse, concealed.
 
     Example:
+    -------
         colored('Hello, World!', 'red', 'on_grey', ['blue', 'blink'])
         colored('Hello, World!', 'green')
+
     """
     if os.getenv("ANSI_COLORS_DISABLED") is None:
-        fmt_str = "\033[%dm%s"
+        fmt_str: str = "\033[%dm%s"
         if color is not None:
             text = fmt_str % (COLORS[color], text)
 
@@ -94,13 +128,18 @@ def colored(text, color=None, on_color=None, attrs=None):
     return text
 
 
-def cprint(text, color=None, on_color=None, attrs=None, **kwargs):
+def cprint(
+    text: str,
+    color: str | None = None,
+    on_color: str | None = None,
+    attrs: list[str] | None = None,
+    **kwargs: dict,
+) -> None:
     """Print colorize text.
 
     It accepts arguments of print function.
     """
-
-    print((colored(text, color, on_color, attrs)), **kwargs)
+    print((colored(text, color, on_color, attrs)), **kwargs)  # type: ignore  # noqa: PGH003
 
 
 def parse(line):
