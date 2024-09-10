@@ -40,11 +40,11 @@ from hpc_server_tools.vm_templates import (
 def parse_args(*, is_interactive: bool = False) -> Namespace:
     defaults: VMConfig = INTERACTIVE_DEFAULTS if is_interactive else JOB_DEFAULTS
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-
+    """Parse the command-line arguments."""
     # VM Configuration Arguments
     parser.add_argument(
         "--template",
-        help="Job Queue",
+        help="Machine Template",
         default="DSML_short",
         type=str,
     )
