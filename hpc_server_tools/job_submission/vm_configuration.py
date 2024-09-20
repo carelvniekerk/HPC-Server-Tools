@@ -162,9 +162,6 @@ def get_vm_config(cmd_args: Namespace, *, is_interactive: bool = False) -> VMCon
         if cmd_args.walltime == defaults.walltime
         else cmd_args.walltime
     )
-    import pdb
-
-    pdb.set_trace()
 
     return VMConfig(
         queue=queue,
