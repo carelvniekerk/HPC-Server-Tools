@@ -113,53 +113,58 @@ def parse_args(*, is_interactive: bool = False) -> Namespace:
     return parser.parse_args()
 
 
-def get_vm_config(args: Namespace, *, is_interactive: bool = False) -> VMConfig:
+def get_vm_config(cmd_args: Namespace, *, is_interactive: bool = False) -> VMConfig:
     """Get the VM configuration for job submission."""
     defaults: VMConfig = INTERACTIVE_DEFAULTS if is_interactive else JOB_DEFAULTS
-    if args.template not in TEMPLATES:
+    if cmd_args.template not in TEMPLATES:
         return VMConfig(
-            queue=args.queue,
-            num_cpus=args.ncpus,
-            memory=args.memory,
-            num_gpus=args.ngpus,
-            accelerator_model=args.accelerator_model,
-            architecture=args.architecture,
-            walltime=args.walltime,
+            queue=cmd_args.queue,
+            num_cpus=cmd_args.ncpus,
+            memory=cmd_args.memory,
+            num_gpus=cmd_args.ngpus,
+            accelerator_model=cmd_args.accelerator_model,
+            architecture=cmd_args.architecture,
+            walltime=cmd_args.walltime,
         )
 
     queue: HPCQueue = (
-        TEMPLATES[args.template].queue if args.queue == defaults.queue else args.queue
+        TEMPLATES[cmd_args.template].queue
+        if cmd_args.queue == defaults.queue
+        else cmd_args.queue
     )
     num_cpus: int = (
-        TEMPLATES[args.template].num_cpus
-        if args.ncpus == defaults.num_cpus
-        else args.ncpus
+        TEMPLATES[cmd_args.template].num_cpus
+        if cmd_args.ncpus == defaults.num_cpus
+        else cmd_args.ncpus
     )
     memory: int = (
-        TEMPLATES[args.template].memory
-        if args.memory == defaults.memory
-        else args.memory
+        TEMPLATES[cmd_args.template].memory
+        if cmd_args.memory == defaults.memory
+        else cmd_args.memory
     )
     num_gpus: int = (
-        TEMPLATES[args.template].num_gpus
-        if args.ngpus == defaults.num_gpus
-        else args.ngpus
+        TEMPLATES[cmd_args.template].num_gpus
+        if cmd_args.ngpus == defaults.num_gpus
+        else cmd_args.ngpus
     )
     accelerator_model: AcceleratorModel = (
-        TEMPLATES[args.template].accelerator_model
-        if args.accelerator_model == defaults.accelerator_model
-        else args.accelerator_model
+        TEMPLATES[cmd_args.template].accelerator_model
+        if cmd_args.accelerator_model == defaults.accelerator_model
+        else cmd_args.accelerator_model
     )
     architecture: Architecture = (
-        TEMPLATES[args.template].architecture
-        if args.architecture == defaults.architecture
-        else args.architecture
+        TEMPLATES[cmd_args.template].architecture
+        if cmd_args.architecture == defaults.architecture
+        else cmd_args.architecture
     )
     walltime: str = (
-        TEMPLATES[args.template].walltime
-        if args.walltime == defaults.walltime
-        else args.walltime
+        TEMPLATES[cmd_args.template].walltime
+        if cmd_args.walltime == defaults.walltime
+        else cmd_args.walltime
     )
+    import pdb
+
+    pdb.set_trace()
 
     return VMConfig(
         queue=queue,
