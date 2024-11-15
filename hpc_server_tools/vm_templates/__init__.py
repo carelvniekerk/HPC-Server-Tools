@@ -38,7 +38,7 @@ TEMPLATES: dict[str, VMConfig] = {
 
 JOB_DEFAULTS = VMConfig(
     queue=HPCQueue.DSML,
-    walltime="48:00:00",
+    walltime="-1:00:00",
 )
 
 INTERACTIVE_DEFAULTS = VMConfig(
