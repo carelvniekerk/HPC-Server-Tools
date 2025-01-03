@@ -168,7 +168,7 @@ def get_python_commands(path: Path, arguments: str) -> str:
         if base_cmd.endswith("\\"):
             add_break = True
 
-        base_cmd = f"poetry run python {relative_path!s}"
+        base_cmd = f"uv run {relative_path!s}"
         if add_break:
             base_cmd += " \\"
 
@@ -177,8 +177,8 @@ def get_python_commands(path: Path, arguments: str) -> str:
         command = [
             "\n# Move to project folder",
             f"cd {project_poetry_root!s}\n",
-            "# Update poetry dependencies",
-            "poetry update\n",
+            "# Update uv dependencies",
+            "uv sync\n",
             *command,
         ]
     except FileNotFoundError:
@@ -199,7 +199,7 @@ def get_python_commands(path: Path, arguments: str) -> str:
     return "\n".join(command)
 
 
-def get_prun_commands(path: Path, arguments: str) -> str:
+def get_uvrun_commands(path: Path, arguments: str) -> str:
     """Create the prun command."""
     if "--" in arguments:
         arguments_list: list[str] = (
@@ -212,11 +212,11 @@ def get_prun_commands(path: Path, arguments: str) -> str:
         arguments_list = shlex.split(arguments) if arguments else []
         arguments_list = [add_quotes_to_str_argument(arg) for arg in arguments_list]
 
-    project_poetry_root: Path = find_project_root(path)
-    relative_path: Path = path.resolve().relative_to(project_poetry_root)
+    project_root: Path = find_project_root(path)
+    relative_path: Path = path.resolve().relative_to(project_root)
 
-    script_name: str = relative_path.name.split("prun:", 1)[-1]
-    command: list[str] = [f"poetry run {script_name}", *arguments_list]
+    script_name: str = relative_path.name.split("uvrun:", 1)[-1]
+    command: list[str] = [f"uv run {script_name}", *arguments_list]
     command = [
         line + " \\" if i + 1 != len(command) else line
         for i, line in enumerate(command)
@@ -225,9 +225,9 @@ def get_prun_commands(path: Path, arguments: str) -> str:
 
     command = [
         "\n# Move to project folder",
-        f"cd {project_poetry_root!s}\n",
-        "# Update poetry dependencies",
-        "poetry update\n",
+        f"cd {project_root!s}\n",
+        "# Update dependencies",
+        "uv sync\n",
         *command,
     ]
 
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     elif ".py" in args.job_script.name:
         commands = get_python_commands(args.job_script, args.job_script_args)
     elif "prun:" in args.job_script.name:
-        commands = get_prun_commands(args.job_script, args.job_script_args)
+        commands = get_uvrun_commands(args.job_script, args.job_script_args)
 
     job_script: str = preamble + "\n" + commands + "\n"
 

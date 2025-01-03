@@ -53,6 +53,16 @@ alias pvrm='poetry env remove'
 alias pvu='poetry env use'
 
 
+# UV commands
+alias uva='uv add'
+alias uvt='uv tree'
+alias uvs='uv sync'
+alias uvi='uv init --package'
+alias uvrm='uv remove'
+alias uvr='uv run'
+alias uvu='uv python pin'
+
+
 # Custom cd function for auto venv changing
 cd() {
     # Call the built-in cd command with all passed arguments
