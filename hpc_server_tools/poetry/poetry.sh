@@ -59,7 +59,7 @@ alias uvt='uv tree'
 alias uvs='uv sync --no-sources'
 alias uvi='uv init --package'
 alias uvrm='uv remove'
-alias uvr='uv run'
+alias uvr='uv run --no-sources'
 alias uvu='uv python pin'
 
 
