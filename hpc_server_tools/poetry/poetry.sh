@@ -151,7 +151,7 @@ _uv_run_completion() {
         case "${prev}" in
             uv)
                 # COMPREPLY=( $(compgen -W "run install add remove update" -- "${cur}") ) # Add other subcommands as needed
-                _uv
+                COMPREPLY=( $(compgen _uv -- "${cur}") )
                 ;;
             run)
                 COMPREPLY=( $(compgen -c -- "${cur}") )
@@ -173,4 +173,4 @@ _uvr_completion() {
     COMPREPLY=( $(compgen -W "${pyproject_script_commands[*]}" -- "${cur}") )
 }
 
-complete -F _uv_run_completion -o bashdefault -o default uv uvr
+complete -F _uv_run_completion -o bashdefault -o default uvr
