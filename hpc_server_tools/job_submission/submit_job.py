@@ -227,7 +227,7 @@ def get_uvrun_commands(path: Path, arguments: str) -> str:
         "\n# Move to project folder",
         f"cd {project_root!s}\n",
         "# Update dependencies",
-        "uv sync\n",
+        "uv sync --no-sources\n",
         *command,
     ]
 
@@ -255,7 +255,7 @@ if __name__ == "__main__":
         commands: str = get_shell_commands(args.job_script, args.job_script_args)
     elif ".py" in args.job_script.name:
         commands = get_python_commands(args.job_script, args.job_script_args)
-    elif "prun:" in args.job_script.name:
+    elif "uvrun:" in args.job_script.name:
         commands = get_uvrun_commands(args.job_script, args.job_script_args)
 
     job_script: str = preamble + "\n" + commands + "\n"

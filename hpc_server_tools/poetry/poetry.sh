@@ -56,7 +56,7 @@ alias pvu='poetry env use'
 # UV commands
 alias uva='uv add'
 alias uvt='uv tree'
-alias uvs='uv sync'
+alias uvs='uv sync --no-sources'
 alias uvi='uv init --package'
 alias uvrm='uv remove'
 alias uvr='uv run'
