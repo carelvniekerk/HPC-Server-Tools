@@ -168,7 +168,7 @@ def get_python_commands(path: Path, arguments: str) -> str:
         if base_cmd.endswith("\\"):
             add_break = True
 
-        base_cmd = f"uv run {relative_path!s}"
+        base_cmd = f"uv run --no-source {relative_path!s}"
         if add_break:
             base_cmd += " \\"
 
@@ -178,7 +178,7 @@ def get_python_commands(path: Path, arguments: str) -> str:
             "\n# Move to project folder",
             f"cd {project_poetry_root!s}\n",
             "# Update uv dependencies",
-            "uv sync\n",
+            "uv sync --no-source\n",
             *command,
         ]
     except FileNotFoundError:
@@ -216,7 +216,7 @@ def get_uvrun_commands(path: Path, arguments: str) -> str:
     relative_path: Path = path.resolve().relative_to(project_root)
 
     script_name: str = relative_path.name.split("uvrun:", 1)[-1]
-    command: list[str] = [f"uv run {script_name}", *arguments_list]
+    command: list[str] = [f"uv run --no-source {script_name}", *arguments_list]
     command = [
         line + " \\" if i + 1 != len(command) else line
         for i, line in enumerate(command)
