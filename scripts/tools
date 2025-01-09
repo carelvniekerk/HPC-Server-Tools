@@ -55,7 +55,8 @@ if [ -f "${HPC_TOOLS_PATH}/terminal_plugins/git.sh" ]; then
 fi
 
 # Add usefull poetry aliases and tools
-# Load poetry completions
+# Load poetry and UV completions
+source <(uv generate-shell-completion bash)
 source <(poetry completions bash)
 if [ -f "${HPC_TOOLS_PATH}/poetry/poetry.sh" ]; then
     source "${HPC_TOOLS_PATH}/poetry/poetry.sh"
