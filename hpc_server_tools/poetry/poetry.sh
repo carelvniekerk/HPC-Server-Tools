@@ -167,10 +167,10 @@ _uvr_completion() {
     local pyproject_script_commands=()
 
     if [[ -f "pyproject.toml" ]]; then
-        pyproject_script_commands=($(awk '/\[project\]/ {found=1; next} /\[.*\]/ {found=0} found && $0 !~ /^[[:space:]]*#/ {print $1}' pyproject.toml | sed "s/\(.*\)/\1/"))
+        pyproject_script_commands=($(awk '/\[project.scripts\]/ {found=1; next} /\[.*\]/ {found=0} found && $0 !~ /^[[:space:]]*#/ {print $1}' pyproject.toml | sed "s/\(.*\)/\1/"))
     fi
 
     COMPREPLY=( $(compgen -W "${pyproject_script_commands[*]}" -- "${cur}") )
 }
 
-complete -F _uv_run_completion uv uvr
+complete -F _uv_run_completion -o bashdefault -o default uv uvr
