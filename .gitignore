@@ -1,9 +1,9 @@
 # Pyenv version file
 .python-version
 
-# Poetry environment files
-poetry.lock
+# UV environment
 .venv
+uv.lock
 
 # Mac OS X hidden files
 .DS_Store
