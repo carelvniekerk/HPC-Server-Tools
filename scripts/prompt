@@ -76,7 +76,7 @@ function set_prompt {
     local host_color="\[\033[2;32m\]󰒋 "   # Green by default
 
     if [[ -n "$VIRTUAL_ENV" ]]; then
-        venv="\[\033[0;35m\]in 󰆧 ${VIRTUAL_ENV_PROMPT}\[\033[00m\] "
+        venv="\[\033[0;35m\]in 󰆧 $(echo ${VIRTUAL_ENV_PROMPT} | tr -d '[:space:]()')\[\033[00m\] "
     else
         venv="\[\033[0;35m\]\[\033[00m\]"
     fi
