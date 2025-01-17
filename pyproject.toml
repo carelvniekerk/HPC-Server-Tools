@@ -5,7 +5,12 @@ description = "Server Side Toolkit for HHU HPC Hilbert"
 authors = [{ name = "Carel van Niekerk", email = "cvanniekerk@hhu.de" }]
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = ["psutil >= 6.0.0", "gpustat >= 1.1.1", "rich >= 13.7.1"]
+dependencies = [
+    "gpustat >= 1.1.1",
+    "psutil >= 6.0.0",
+    "types-psutil>=6.1.0.20241221",
+    "rich >= 13.7.1",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -14,3 +19,10 @@ build-backend = "hatchling.build"
 [tool.ruff]
 extend = "~/.config/ruff/config.toml"
 target-version = "py312"
+
+# Configuration for Mypy (Python static type checker)
+[tool.mypy]
+python_version = "3.12"
+[[tool.mypy.overrides]]
+module = ["gpustat"]
+ignore_missing_imports = true

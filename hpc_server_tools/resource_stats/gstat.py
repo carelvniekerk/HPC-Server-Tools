@@ -55,7 +55,7 @@ def get_cpu_info() -> tuple[float, float, int, int, str]:
     """Get CPU and RAM usage information."""
     cpu_usage: float = psutil.cpu_percent(interval=1)
     try:
-        temperature: float = psutil.sensors_temperatures()["coretemp"][0].current  # type: ignore - This is only available if the system allows temperature monitoring
+        temperature: float = psutil.sensors_temperatures()["coretemp"][0].current  # type: ignore[attr-defined] # This is only available if the system allows temperature monitoring
     except (KeyError, IndexError):
         temperature = -1.0
 
@@ -69,7 +69,7 @@ def get_cpu_info() -> tuple[float, float, int, int, str]:
 
 
 def color_value(
-    stdscr,
+    stdscr,  # noqa: ANN001
     value: float,
     thresholds: list[float],
     colors: list,
@@ -86,7 +86,7 @@ def color_value(
     stdscr.attroff(color)
 
 
-def display_info(stdscr, selected_gpus: list[str]) -> None:  # noqa: PLR0915
+def display_info(stdscr, selected_gpus: list[str]) -> None:  # noqa: ANN001, PLR0915
     """Display CPU, RAM, and GPU usage information."""
     curses.curs_set(0)
     stdscr.nodelay(1)
@@ -148,7 +148,7 @@ def display_info(stdscr, selected_gpus: list[str]) -> None:  # noqa: PLR0915
             [ram_total // (1024**2) * 0.5, ram_total // (1024**2) * 0.75],
             [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
         )
-        stdscr.addstr(f"/{ram_total // (1024 ** 2)} MB\n")
+        stdscr.addstr(f"/{ram_total // (1024**2)} MB\n")
 
         if selected_gpus:
             # Get GPU info
@@ -167,10 +167,14 @@ def display_info(stdscr, selected_gpus: list[str]) -> None:  # noqa: PLR0915
                 stdscr.addstr(row + 1, 0, "Utilisation: ")
                 stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
                 color_value(
-                    stdscr,
-                    gpu["utilization"],  # type: ignore - Utilization is always a float
-                    [50, 75],
-                    [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
+                    stdscr=stdscr,
+                    value=gpu["utilization"],  # type: ignore[arg-type] # Utilization is always a float
+                    thresholds=[50, 75],
+                    colors=[
+                        curses.color_pair(2),
+                        curses.color_pair(3),
+                        curses.color_pair(4),
+                    ],
                 )
                 stdscr.addstr("%\n")
 
@@ -178,10 +182,14 @@ def display_info(stdscr, selected_gpus: list[str]) -> None:  # noqa: PLR0915
                 stdscr.addstr(row + 2, 0, "Temperature: ")
                 stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
                 color_value(
-                    stdscr,
-                    gpu["temperature"],  # type: ignore - Temperature is always a float
-                    [60, 80],
-                    [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
+                    stdscr=stdscr,
+                    value=gpu["temperature"],  # type: ignore[arg-type] # Utilization is always a float
+                    thresholds=[60, 80],
+                    colors=[
+                        curses.color_pair(2),
+                        curses.color_pair(3),
+                        curses.color_pair(4),
+                    ],
                 )
                 stdscr.addstr(" C\n")
 
@@ -190,8 +198,8 @@ def display_info(stdscr, selected_gpus: list[str]) -> None:  # noqa: PLR0915
                 stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
                 color_value(
                     stdscr,
-                    gpu["memory_used"],  # type: ignore - Memory is always a float
-                    [gpu["memory_total"] * 0.5, gpu["memory_total"] * 0.75],  # type: ignore - Memory usage is always a int
+                    gpu["memory_used"],  # type: ignore[arg-type] # Utilization is always a float
+                    [gpu["memory_total"] * 0.5, gpu["memory_total"] * 0.75],  # type: ignore[operator] # Memory usage is always a int
                     [curses.color_pair(2), curses.color_pair(3), curses.color_pair(4)],
                 )
                 stdscr.addstr(f"/{gpu['memory_total']} MB\n")
@@ -200,11 +208,11 @@ def display_info(stdscr, selected_gpus: list[str]) -> None:  # noqa: PLR0915
                 stdscr.addstr(row + 4, 0, "Non-root jobs:\n")
                 stdscr.attroff(curses.color_pair(6) | curses.A_BOLD)
                 stdscr.attron(curses.color_pair(6))
-                for job in gpu["jobs"]:  # type: ignore - Jobs is always a list
+                for job in gpu["jobs"]:  # type: ignore[union-attr] # Jobs is always a list
                     stdscr.addstr(
                         row + 5,
                         0,
-                        f"  - {job['username']} (Mem: {job['gpu_memory_usage']} MB)\n",
+                        f"  - {job['username']} (Mem: {job['gpu_memory_usage']} MB)\n",  # type: ignore[index]
                     )
                     row += 1
                 stdscr.attroff(curses.color_pair(6))

@@ -161,7 +161,7 @@ def display_resources() -> None:
                 color = "green" if value > 10 else "yellow" if value > 0 else "red"  # noqa: PLR2004
             if resource.lower() == "mem":
                 color = "green" if value > 320 else "yellow" if value > 0 else "red"  # noqa: PLR2004
-                value = f"{value} GB"  # noqa: PLW2901
+                value = f"{value} GB"  # type: ignore[assignment] # noqa: PLW2901
             table.add_row(resource.upper(), f"[{color}]{value}[/]")
         tables.append(table)
 
