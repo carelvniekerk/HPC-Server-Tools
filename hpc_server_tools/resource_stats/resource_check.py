@@ -31,7 +31,7 @@ from rich.columns import Columns
 from rich.console import Console
 from rich.table import Table
 
-from hpc_server_tools.configuration import COMPUTE_NODE_GROUPS, LOCAL_QUEUE, USER_NAME
+from hpc_server_tools.configuration import COMPUTE_NODE_GROUPS, USER_NAME
 
 console: Console = Console()
 
@@ -39,18 +39,34 @@ console: Console = Console()
 def get_node_status(node_name: str) -> dict[str, str]:
     """Get the status of a node in the HPC cluster."""
     try:
-        pbsnodes_return: str = subprocess.run(
-            f"pbsnodes {node_name}",
+        scontrol_return: str = subprocess.run(
+            f"scontrol show node {node_name}",
             shell=True,
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8")
-        status: list[list[str]] = [
-            line.split(" = ", 1)
-            for line in pbsnodes_return.split("\n")
-            if line and node_name not in line
-        ]
-        return {key.strip(): info.strip() for key, info in status}
+        node_info: list[str] = scontrol_return.split("\n")
+        memory: str = next(line for line in node_info if "FreeMem" in line)
+        memory = memory.split("FreeMem=", 1)[-1].split(" ", 1)[0]
+        memory = f"{memory}mb"
+
+        resources_info: str = next(line for line in node_info if "CfgTRES=" in line)
+        cpus_available: str = resources_info.split("cpu=", 1)[-1].split(",", 1)[0]
+        gpus_available: str = resources_info.split("gpu=", 1)[-1].split(",", 1)[0]
+
+        resources_info = next(line for line in node_info if "AllocTRES=" in line)
+        cpus_allocated: str = resources_info.split("cpu=", 1)[-1].split(",", 1)[0]
+        gpus_allocated: str = resources_info.split("gpu=", 1)[-1].split(",", 1)[0]
+
+        return {  # noqa: TRY300
+            "resources_available.ncpus": cpus_available,
+            "resources_available.ngpus": gpus_available,
+            "resources_assigned.ncpus": cpus_allocated,
+            "resources_assigned.ngpus": gpus_allocated,
+            "resources_available.mem": memory,
+            "resources_assigned.mem": "0mb",
+        }
+
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error getting status for node {node_name}: {e}[/red]")
         return {}
@@ -121,18 +137,7 @@ def display_resources() -> None:
     # Display the job status
     console.print(
         subprocess.run(
-            f"qstat -a {LOCAL_QUEUE}",
-            capture_output=True,
-            check=True,
-            shell=True,
-            text=True,
-        ).stdout,
-        style="bold blue",
-        justify="left",
-    )
-    console.print(
-        subprocess.run(
-            f"qstat -u {USER_NAME}",
+            f"squeue --user {USER_NAME}",
             capture_output=True,
             check=True,
             shell=True,
