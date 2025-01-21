@@ -61,6 +61,7 @@ alias uvi='uv init --package'
 alias uvrm='uv remove'
 alias uvr='uv run --no-sources'
 alias uvu='uv python pin'
+alias upy='uv run --no-sources python'
 
 
 # Custom cd function for auto venv changing

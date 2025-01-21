@@ -52,6 +52,7 @@ alias l.='ls -d .* --color=auto'
 alias ll='ls -l --color=auto'
 alias ls='ls --color=auto'
 alias src="source ~/.bash_profile"
+alias c="clear"
 
 # Python aliases
 alias py="python3"
