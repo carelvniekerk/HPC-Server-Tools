@@ -57,5 +57,5 @@ def get_node_list(prefix: str, indices: list[int | str]) -> list[str]:
 
 
 COMPUTE_NODE_GROUPS: dict[str, list[str]] = {
-    "A100-40GB": get_node_list("n2gpu12", [f"{i:02d}" for i in range(33)]),
+    "A100-40GB": get_node_list("n2gpu12", [f"{i:02d}" for i in range(1, 33)]),
 }
