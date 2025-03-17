@@ -121,6 +121,7 @@ def aggregate_resources(nodes: list[str]) -> dict[str, float]:
     """Aggregate resources across a list of nodes."""
     with ThreadPoolExecutor() as executor:
         status_list: list[dict[str, str]] = list(executor.map(get_node_status, nodes))
+    print(status_list)
     resources_list: list[dict[str, float]] = [
         get_resources_available(status) for status in status_list
     ]
