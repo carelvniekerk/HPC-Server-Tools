@@ -113,10 +113,7 @@ def get_avail(status: dict[str, str], resource: str) -> float:
 
 def print_hpc_banner() -> None:
     """Print the HPC banner."""
-    banner: str = """
-█░█░█ █▀▀ █░░ █▀▀ █▀█ █▀▄▀█ █▀▀   ▀█▀ █▀█   █░█ █ █░░ █▄▄ █▀▀ █▀█ ▀█▀ █
-▀▄▀▄▀ ██▄ █▄▄ █▄▄ █▄█ █░▀░█ ██▄   ░█░ █▄█   █▀█ █ █▄▄ █▄█ ██▄ █▀▄ ░█░ ▄
-    """
+    banner: str = """Welcome to Noctua2"""
     console.print(banner, style="bold blue", justify="left")
 
 

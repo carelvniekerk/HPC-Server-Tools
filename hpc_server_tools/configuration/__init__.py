@@ -27,13 +27,13 @@ from os import environ
 from pathlib import Path
 
 __all__ = [
-    "USER_NAME",
-    "PROJECTS_ROOT_DIR",
-    "USER_ROOT_DIR",
-    "LOGS_PATH",
+    "COMPUTE_NODE_GROUPS",
     "HPC_TOOLS_PATH",
     "LOCAL_QUEUE",
-    "COMPUTE_NODE_GROUPS",
+    "LOGS_PATH",
+    "PROJECTS_ROOT_DIR",
+    "USER_NAME",
+    "USER_ROOT_DIR",
 ]
 
 if "USER_NAME" not in environ:
@@ -51,17 +51,11 @@ LOCAL_QUEUE: str = "DSML"
 
 
 # Define node groups
-def get_node_list(prefix: str, indices: list[int]) -> list[str]:
+def get_node_list(prefix: str, indices: list[int | str]) -> list[str]:
     """Generate a list of node names based on a prefix and a list of indices."""
     return [f"{prefix}{i}" for i in indices]
 
 
 COMPUTE_NODE_GROUPS: dict[str, list[str]] = {
-    "GTX2080-8GB": get_node_list("hilbert", [313, 314]),
-    "GTX1080TI-12GB": get_node_list("hilbert", [300 + i for i in range(13) if i != 8]),  # noqa: PLR2004
-    "TeslaT4-16GB": get_node_list("hilbert", [120, 121, 122, 123, 124]),
-    "A100-40GB": get_node_list("hilbert", [400, 401, 402, 403]),
-    "A100-80GB": get_node_list("hilbert", [404, 405, 406]),
-    "RTX8000-48GB": get_node_list("hilbert", [330, 331]),
-    "RTX6000-24GB": get_node_list("hilbert", [316, 317, 318, 319]),
+    "A100-40GB": get_node_list("n2gpu12", [f"{i:02d}" for i in range(33)]),
 }
