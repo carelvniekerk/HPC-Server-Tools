@@ -45,6 +45,9 @@ def get_node_status(node_name: str) -> dict[str, str]:
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8")
+        import pdb
+
+        pdb.set_trace()
         node_info: list[str] = scontrol_return.split("\n")
         memory: str = next(line for line in node_info if "FreeMem" in line)
         memory = memory.split("FreeMem=", 1)[-1].split(" ", 1)[0]
