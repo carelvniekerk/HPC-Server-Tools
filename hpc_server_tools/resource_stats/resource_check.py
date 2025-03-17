@@ -55,8 +55,15 @@ def get_node_status(node_name: str) -> dict[str, str]:
         gpus_available: str = resources_info.split("gpu=", 1)[-1].split(",", 1)[0]
 
         resources_info = next(line for line in node_info if "AllocTRES=" in line)
-        cpus_allocated: str = resources_info.split("cpu=", 1)[-1].split(",", 1)[0]
-        gpus_allocated: str = resources_info.split("gpu=", 1)[-1].split(",", 1)[0]
+        if "cpu=" not in resources_info:
+            cpus_allocated = "0"
+        else:
+            cpus_allocated: str = resources_info.split("cpu=", 1)[-1].split(",", 1)[0]
+
+        if "gpu=" not in resources_info:
+            gpus_allocated = "0"
+        else:
+            gpus_allocated: str = resources_info.split("gpu=", 1)[-1].split(",", 1)[0]
 
         return {  # noqa: TRY300
             "resources_available.ncpus": cpus_available,
@@ -121,7 +128,6 @@ def aggregate_resources(nodes: list[str]) -> dict[str, float]:
     """Aggregate resources across a list of nodes."""
     with ThreadPoolExecutor() as executor:
         status_list: list[dict[str, str]] = list(executor.map(get_node_status, nodes))
-    print(status_list)
     resources_list: list[dict[str, float]] = [
         get_resources_available(status) for status in status_list
     ]
