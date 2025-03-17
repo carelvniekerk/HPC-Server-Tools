@@ -45,9 +45,6 @@ def get_node_status(node_name: str) -> dict[str, str]:
             check=True,
             capture_output=True,
         ).stdout.decode("utf-8")
-        import pdb
-
-        pdb.set_trace()
         node_info: list[str] = scontrol_return.split("\n")
         memory: str = next(line for line in node_info if "FreeMem" in line)
         memory = memory.split("FreeMem=", 1)[-1].split(" ", 1)[0]
@@ -78,8 +75,8 @@ def get_node_status(node_name: str) -> dict[str, str]:
 def get_resources_available(node_status: dict[str, str]) -> dict[str, float]:
     """Get the resources available on a node in the HPC cluster."""
     resources: dict[str, float] = {"ncpus": 0, "ngpus": 0, "mem": 0}
-    if "state" not in node_status or node_status["state"] != "free":
-        return resources
+    # if "state" not in node_status or node_status["state"] != "free":
+    #     return resources
 
     for resource in resources:
         resources[resource] = get_avail(node_status, resource)
