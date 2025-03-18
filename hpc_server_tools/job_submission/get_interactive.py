@@ -63,7 +63,7 @@ def main() -> None:
 
     command.append(f"-t {vm_config.walltime}")
 
-    command.append("bash")
+    command.append('"bash -ci"')
 
     qi_command_path: Path = HPC_TOOLS_PATH / "job_submission" / "qi.sh"
     qi_command_path.write_text(" ".join(command))
