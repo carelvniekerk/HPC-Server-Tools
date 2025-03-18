@@ -31,7 +31,7 @@ from tempfile import NamedTemporaryFile
 
 from hpc_server_tools.configuration import LOGS_PATH, USER_ROOT_DIR
 from hpc_server_tools.job_submission.vm_configuration import get_vm_config, parse_args
-from hpc_server_tools.poetry import get_venv_path
+from hpc_server_tools.python_environments import get_venv_path
 from hpc_server_tools.vm_templates import (
     AcceleratorModel,
     Architecture,

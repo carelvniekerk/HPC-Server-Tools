@@ -26,14 +26,15 @@
 # Define user information
 export USER_NAME="niekerk"
 export SETUP_COMPLETE=True
-export PYTHON_VERSION="3.12.3"
-export CUDA_VERSION="11.7.1"
+export PYTHON_VERSION="3.12.3-GCCcore-13.3.0"
+export CUDA_VERSION="12.6.0"
 
 # HPC Server Tools path
-export HPC_TOOLS_PATH="/gpfs/project/${USER_NAME}/.usr_tls/hpc_server_tools"
+export HPC_USER_ROOT="/pc2/users/u"
+export HPC_TOOLS_PATH="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/hpc_server_tools"
 
 # Setup the Index URL for UV
-export UV_DEFAULT_INDEX="http://pypi.repo.test.hhu.de/simple/"
+# export UV_DEFAULT_INDEX="http://pypi.repo.test.hhu.de/simple/"
 
 # Setup colors for the ls command
 export LS_COLORS='di=1;34:ln=1;36:so=1;35:pi=1;33:ex=1;32:bd=1;33;44:cd=1;33;44:su=1;31:sg=1;31:tw=1;34;42:ow=1;34;42'
@@ -48,21 +49,21 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
     --separator="─" --scrollbar="│" --layout="reverse" --info="right"'
 
 # Setup Offline mode for Huggingface
-export HF_DATASETS_OFFLINE=1
-export TRANSFORMERS_OFFLINE=1
-export HF_EVALUATE_OFFLINE=1
+# export HF_DATASETS_OFFLINE=1
+# export TRANSFORMERS_OFFLINE=1
+# export HF_EVALUATE_OFFLINE=1
 
 # Note: These names are correct, one starts with HF_... and the other with HUGGINGFACE_...
 # https://huggingface.co/docs/datasets/en/cache#cache-directory
-export HF_DATASETS_CACHE="/gpfs/project/${USER_NAME}/models/huggingface/datasets/"
-export HUGGINGFACE_HUB_CACHE="/gpfs/project/$USER_NAME/models/huggingface/hub/"
+# export HF_DATASETS_CACHE="/gpfs/project/${USER_NAME}/models/huggingface/datasets/"
+# export HUGGINGFACE_HUB_CACHE="/gpfs/project/$USER_NAME/models/huggingface/hub/"
 
 # Set Offline mode for Weights & Biases
 # https://docs.wandb.ai/guides/technical-faq/setup#can-i-run-wandb-offline
 export WANDB_MODE=offline
 
 # Set location for tmux dir
-export TMUX_TMPDIR="/gpfs/project/${USER_NAME}/.usr_tls/.tmux"
+export TMUX_TMPDIR="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.tmux"
 
 # Setup the history file
 HISTFILE="${HOME}/.bash_history"

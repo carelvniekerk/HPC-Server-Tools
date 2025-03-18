@@ -47,9 +47,9 @@ INTERACTIVE_DEFAULTS = VMConfig(
 )
 
 __all__ = [
-    "TEMPLATES",
-    "JOB_DEFAULTS",
     "INTERACTIVE_DEFAULTS",
+    "JOB_DEFAULTS",
+    "TEMPLATES",
     "AcceleratorModel",
     "Architecture",
     "HPCQueue",

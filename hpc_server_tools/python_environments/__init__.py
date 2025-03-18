@@ -23,6 +23,6 @@
 # limitations under the License.
 """Poetry related tools."""
 
-from hpc_server_tools.poetry.get_venv_path import get_venv_path
+from hpc_server_tools.python_environments.get_venv_path import get_venv_path
 
 __all__ = ["get_venv_path"]

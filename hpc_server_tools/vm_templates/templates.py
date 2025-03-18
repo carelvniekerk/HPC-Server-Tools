@@ -31,15 +31,15 @@ from hpc_server_tools.vm_templates.types import (
 )
 
 __all__ = [
-    "DSML_SHORT",
-    "DSML",
-    "CPU",
-    "GTX1080",
-    "TESLAT4",
-    "RTX6000",
-    "RTX8000",
     "A100_40GB",
     "A100_80GB",
+    "CPU",
+    "DSML",
+    "DSML_SHORT",
+    "GTX1080",
+    "RTX6000",
+    "RTX8000",
+    "TESLAT4",
 ]
 
 DSML_SHORT: VMConfig = VMConfig(
@@ -81,10 +81,8 @@ RTX8000: VMConfig = VMConfig(
 )
 
 A100_40GB: VMConfig = VMConfig(
-    queue=HPCQueue.CUDA,
     memory=52,
     accelerator_model=AcceleratorModel.A100,
-    architecture=Architecture.ZEN2,
 )
 
 A100_80GB: VMConfig = VMConfig(

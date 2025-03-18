@@ -26,7 +26,7 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
-__all__ = ["HPCQueue", "AcceleratorModel", "Architecture", "VMConfig"]
+__all__ = ["AcceleratorModel", "Architecture", "HPCQueue", "VMConfig"]
 
 
 class HPCQueue(StrEnum):

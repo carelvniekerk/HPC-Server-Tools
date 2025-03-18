@@ -2,7 +2,7 @@
 #--------------------------------------------------------------------------------
 # Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk, Benjamin Ruppik
-# Year: 2024
+# Year: 2025
 # Group: Dialogue Systems and Machine Learning Group
 # Institution: Heinrich Heine University Düsseldorf
 #--------------------------------------------------------------------------------
@@ -23,16 +23,16 @@
 # limitations under the License.
 
 # Aliases for loading modules
-alias load_python="module load Python/${PYTHON_VERSION}"
-alias load_cuda="module load CUDA/${CUDA_VERSION}"
-alias load_tmux="module load tmux/3.3a"
-alias load_installation_utils="module load intel/xe2020.4 gcc/11.1.0 SentencePiece/0.1.94"
-alias base_installers='load_python && load_cuda && load_installation_utils'
+alias load_python="module load lang/Python/${PYTHON_VERSION}"
+alias load_cuda="module load system/CUDA/${CUDA_VERSION}"
+alias load_tmux="module load tools/tmux/3.3a"
+# alias load_installation_utils="module load intel/xe2020.4 gcc/11.1.0 SentencePiece/0.1.94"
+# alias base_installers='load_python && load_cuda && load_installation_utils'
 alias base='load_python && load_cuda && load_tmux'
 
 # Aliases for user tools
-export HPC_TOOLS_PYTHON="/gpfs/project/${USER_NAME}/.usr_tls/.venv/bin/python"
-alias activate="source ${HPC_TOOLS_PATH}/poetry/activate_venv.sh"
+export HPC_TOOLS_PYTHON="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.venv/bin/python"
+alias activate="source ${HPC_TOOLS_PATH}/python_environments/activate_venv.sh"
 alias qi-setup="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/get_interactive.py"
 alias qi="source ${HPC_TOOLS_PATH}/job_submission/qi.sh"
 alias qs="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/resource_stats/resource_check.py"
@@ -41,7 +41,7 @@ alias cleanup_job_logs="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/cle
 alias job_log="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/job_log.py"
 
 # Some alias for convenience:
-alias home="cd /gpfs/project/${USER_NAME}"
+alias home="cd ${HPC_USER_ROOT}/${USER_NAME}"
 alias q='exit'
 alias ..='cd ..'
 alias ...='cd ../..'

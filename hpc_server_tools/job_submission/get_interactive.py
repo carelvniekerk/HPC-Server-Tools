@@ -44,31 +44,28 @@ def main() -> None:
     args: Namespace = parse_args(is_interactive=True)
     vm_config: VMConfig = get_vm_config(args, is_interactive=True)
 
-    command: list[str] = ["qsub", "-I", "-N", "DevSession", "-A", "DialSys"]
+    command: list[str] = ["srun", "--pty", "--job-name=DevSession"]
 
     if vm_config.queue != HPCQueue.DEFAULT:
-        command.append("-q")
+        command.append("--partition")
         command.append(vm_config.queue.value)
 
-    command.append("-l")
-    machine_configuration: str = f"select=1:ncpus={vm_config.num_cpus}"
-    machine_configuration += f":mem={vm_config.memory}gb:ngpus={vm_config.num_gpus}"
-    machine_configuration += (
-        f":accelerator_model={vm_config.accelerator_model}"
-        if vm_config.accelerator_model != AcceleratorModel.DEFAULT
-        else ""
-    )
-    machine_configuration += (
-        f":arch={vm_config.architecture}"
-        if vm_config.architecture != Architecture.DEFAULT
-        else ""
-    )
-    command.append(machine_configuration)
+    command.append(f"--cpus-per-task={vm_config.num_cpus}")
+    command.append(f"--mem={vm_config.memory}gb")
 
-    command.append("-l")
-    command.append(f"walltime={vm_config.walltime}")
+    if vm_config.num_gpus > 0:
+        gpu_type: str = (
+            vm_config.accelerator_model.value
+            if vm_config.accelerator_model != AcceleratorModel.DEFAULT
+            else "generic"
+        )
+        command.append(f"--gres=gpu:{gpu_type}:{vm_config.num_gpus}")
 
-    qi_command_path: Path = HPC_TOOLS_PATH / "job_submission/qi.sh"
+    command.append(f"-t {vm_config.walltime}")
+
+    command.append("bash")
+
+    qi_command_path: Path = HPC_TOOLS_PATH / "job_submission" / "qi.sh"
     qi_command_path.write_text(" ".join(command))
 
 
