@@ -248,6 +248,8 @@ if __name__ == "__main__":
 
     job_script: str = preamble + "\n" + commands + "\n"
 
+    print(job_script)
+
     with NamedTemporaryFile(mode="w", suffix=".sh", delete=True) as temp_file:
         temp_file.write(job_script)
         temp_file.flush()
