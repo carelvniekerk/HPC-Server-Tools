@@ -81,7 +81,7 @@ def build_preamble(vm_config: VMConfig, job_name: str) -> str:
 
     if vm_config.num_gpus > 0:
         gpu_type = (
-            f"{vm_config.accelerator_model.value}:"
+            f"{vm_config.accelerator_model.value}"
             if vm_config.accelerator_model != AcceleratorModel.DEFAULT
             else ""
         )
@@ -247,8 +247,6 @@ if __name__ == "__main__":
         commands = get_uvrun_commands(args.job_script, args.job_script_args)
 
     job_script: str = preamble + "\n" + commands + "\n"
-
-    print(job_script)
 
     with NamedTemporaryFile(mode="w", suffix=".sh", delete=True) as temp_file:
         temp_file.write(job_script)
