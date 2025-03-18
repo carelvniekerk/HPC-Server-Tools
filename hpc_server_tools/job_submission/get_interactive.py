@@ -29,7 +29,6 @@ from hpc_server_tools.configuration import HPC_TOOLS_PATH
 from hpc_server_tools.job_submission.vm_configuration import get_vm_config, parse_args
 from hpc_server_tools.vm_templates import (
     AcceleratorModel,
-    Architecture,
     HPCQueue,
     VMConfig,
 )
@@ -63,7 +62,7 @@ def main() -> None:
 
     command.append(f"-t {vm_config.walltime}")
 
-    command.append('"bash -ci"')
+    command.append("bash --login")
 
     qi_command_path: Path = HPC_TOOLS_PATH / "job_submission" / "qi.sh"
     qi_command_path.write_text(" ".join(command))
