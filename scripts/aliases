@@ -41,7 +41,7 @@ alias cleanup_job_logs="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/cle
 alias job_log="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/job_log.py"
 
 # Some alias for convenience:
-alias home="cd ${HPC_USER_ROOT}/${USER_NAME}"
+alias home="cd ${PC2PFS}/hpc-t3t-udue/DSML/${USER_NAME}"
 alias q='exit'
 alias ..='cd ..'
 alias ...='cd ../..'

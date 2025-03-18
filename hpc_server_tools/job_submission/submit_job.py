@@ -74,34 +74,22 @@ def build_preamble(vm_config: VMConfig, job_name: str) -> str:
     """Build the preamble for the job script."""
     preamble: str = "#!/bin/bash -li\n"
 
-    preamble += f"#PBS -l walltime={vm_config.walltime}\n"
+    preamble += f"#SBATCH -t {vm_config.walltime}\n"
 
-    machine_configuration: str = (
-        f"select=1:ncpus={vm_config.num_cpus}:mem={vm_config.memory}gb"
-    )
-    machine_configuration += (
-        f":ngpus={vm_config.num_gpus}" if vm_config.num_gpus > 0 else ""
-    )
-    machine_configuration += (
-        f":accelerator_model={vm_config.accelerator_model.value}"
-        if vm_config.accelerator_model != AcceleratorModel.DEFAULT
-        else ""
-    )
-    machine_configuration += (
-        f":arch={vm_config.architecture.value}"
-        if vm_config.architecture != Architecture.DEFAULT
-        else ""
-    )
-    preamble += f"#PBS -l {machine_configuration}\n"
+    preamble += f"#SBATCH --cpus-per-task={vm_config.num_cpus}\n"
+    preamble += f"#SBATCH --mem={vm_config.memory}gb\n"
 
-    preamble += "#PBS -A 'DialSys'\n"
-    preamble += (
-        f"#PBS -q '{vm_config.queue.value}'\n"
-        if vm_config.queue != HPCQueue.DEFAULT
-        else ""
-    )
-    preamble += f"#PBS -r n\n#PBS -e {LOGS_PATH}\n#PBS -o {LOGS_PATH}\n"
-    preamble += f"#PBS -N {job_name}\n\n"
+    if vm_config.num_gpus > 0:
+        gpu_type = (
+            f"{vm_config.accelerator_model.value}:"
+            if vm_config.accelerator_model != AcceleratorModel.DEFAULT
+            else ""
+        )
+        preamble += f"#SBATCH --gres=gpu:{gpu_type}:{vm_config.num_gpus}\n"
+
+    preamble += f"#SBATCH --output={LOGS_PATH}/%x_%j.out\n"
+    preamble += f"#SBATCH --error={LOGS_PATH}/%x_%j.err\n"
+    preamble += f"#SBATCH -J {job_name}\n\n"
 
     preamble += "# Load environment\n"
     preamble += "source ~/.bashrc\n"
