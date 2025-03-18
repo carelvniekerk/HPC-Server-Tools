@@ -254,7 +254,7 @@ if __name__ == "__main__":
 
         # Submit job
         shell_return: str = subprocess.run(
-            f"qsub {temp_file.name}",
+            f"sbatch {temp_file.name}",
             shell=True,
             capture_output=True,
             check=True,
