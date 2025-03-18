@@ -30,6 +30,8 @@ alias uvi='uv init --package'
 alias uvrm='uv remove'
 alias uvr='uv run --no-sources'
 alias uvu='uv python pin'
+alias upy='uv run python'
+alias uup='rm uv.lock && uv sync'
 
 
 # Custom cd function for auto venv changing
