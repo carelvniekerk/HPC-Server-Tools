@@ -41,7 +41,7 @@ if "USER_NAME" not in environ:
     raise KeyError(msg)
 
 USER_NAME: str = environ["USER_NAME"]
-PROJECTS_ROOT_DIR: Path = Path("/gpfs/project")
+PROJECTS_ROOT_DIR: Path = Path("/pc2/users/u")
 USER_ROOT_DIR: Path = PROJECTS_ROOT_DIR / USER_NAME
 LOGS_PATH: Path = USER_ROOT_DIR / "job_logs"
 HPC_TOOLS_PATH: Path = Path(__file__).parent.parent

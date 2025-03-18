@@ -261,6 +261,7 @@ if __name__ == "__main__":
             text=True,
         ).stdout
         job_id: str = next(line for line in shell_return.split("\n") if line)
+        job_id = job_id.split("batch job ")[-1]
 
     job_script_path: Path = LOGS_PATH / f"{job_id}.sh"
     save_bash(job_script, job_script_path)
