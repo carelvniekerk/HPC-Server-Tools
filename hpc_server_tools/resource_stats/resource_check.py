@@ -56,14 +56,14 @@ def get_node_status(node_name: str) -> dict[str, str]:
 
         resources_info = next(line for line in node_info if "AllocTRES=" in line)
         if "cpu=" not in resources_info:
-            cpus_allocated = "0"
+            cpus_allocated: str = "0"
         else:
-            cpus_allocated: str = resources_info.split("cpu=", 1)[-1].split(",", 1)[0]
+            cpus_allocated = resources_info.split("cpu=", 1)[-1].split(",", 1)[0]
 
         if "gpu=" not in resources_info:
-            gpus_allocated = "0"
+            gpus_allocated: str = "0"
         else:
-            gpus_allocated: str = resources_info.split("gpu=", 1)[-1].split(",", 1)[0]
+            gpus_allocated = resources_info.split("gpu=", 1)[-1].split(",", 1)[0]
 
         return {  # noqa: TRY300
             "resources_available.ncpus": cpus_available,

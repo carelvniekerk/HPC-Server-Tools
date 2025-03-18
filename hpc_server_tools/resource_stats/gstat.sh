@@ -62,7 +62,7 @@ gs() {
     local gstat_script="${HPC_TOOLS_PATH}/resource_stats/gstat.py"
     if [ -n "$CUDA_VISIBLE_DEVICES" ]; then
         # gpu_indices=$(get_gpu_indices)
-        ${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.venv/bin/python $gstat_script --id "$(get_gpu_indices)"
+        ${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.venv/bin/python $gstat_script --id "$CUDA_VISIBLE_DEVICES"
     else
         ${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.venv/bin/python $gstat_script
     fi
