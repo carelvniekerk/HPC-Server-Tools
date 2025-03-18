@@ -39,16 +39,16 @@ if [[ $- != *i* ]]; then
 fi
 
 # Add Aliases
-if [ -f /gpfs/project/${USER_NAME}/.usr_tls/scripts/aliases ]; then
-    source /gpfs/project/${USER_NAME}/.usr_tls/scripts/aliases
+if [ -f ${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/scripts/aliases ]; then
+    source ${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/scripts/aliases
 fi
 
 # Initialise Command Prompt
-if [ -f /gpfs/project/${USER_NAME}/.usr_tls/scripts/prompt ]; then
-    source /gpfs/project/${USER_NAME}/.usr_tls/scripts/prompt
+if [ -f ${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/scripts/prompt ]; then
+    source ${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/scripts/prompt
 fi
 
 # Initialise CLI tools
-if [ -f /gpfs/project/${USER_NAME}/.usr_tls/scripts/tools ]; then
-    source /gpfs/project/${USER_NAME}/.usr_tls/scripts/tools
+if [ -f ${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/scripts/tools ]; then
+    source ${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/scripts/tools
 fi
