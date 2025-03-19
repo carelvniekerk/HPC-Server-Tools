@@ -60,7 +60,7 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
 
 # Set Offline mode for Weights & Biases
 # https://docs.wandb.ai/guides/technical-faq/setup#can-i-run-wandb-offline
-export WANDB_MODE=offline
+# export WANDB_MODE=offline
 
 # Set location for tmux dir
 export TMUX_TMPDIR="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.tmux"
