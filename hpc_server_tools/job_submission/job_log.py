@@ -25,6 +25,7 @@
 
 import subprocess
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
+from pathlib import Path
 
 from rich import box
 from rich.console import Console
@@ -38,13 +39,13 @@ def get_jobs(username: str) -> list[dict[str, str | int]]:
     """Get a list of jobs for a user on the HPC cluster."""
     raw_jobs: list[str] = (
         subprocess.run(
-            f"qstat -u {username}",
+            f"squeue --user {username}",
             shell=True,
             check=True,
             capture_output=True,
         )
         .stdout.decode()
-        .split("\n")[5:-1]
+        .split("\n")[1:-1]
     )
     raw_jobs_split: list[list[str]] = [job.split() for job in raw_jobs]
 
@@ -52,9 +53,9 @@ def get_jobs(username: str) -> list[dict[str, str | int]]:
         {
             "job_num": idx,
             "jobid": job[0],
-            "name": job[3],
-            "user": job[2],
-            "status": job[9],
+            "name": job[2],
+            "user": job[3],
+            "status": job[4],
         }
         for idx, job in enumerate(raw_jobs_split)
     ]
@@ -100,22 +101,23 @@ if __name__ == "__main__":
     job_id: str = jobs[int(job_index)]["jobid"]  # type: ignore[assignment]
 
     # Get host
-    job_id = job_id.split(".")[0]
-    host = (
-        subprocess.run(
-            f"qstat -f {job_id} -n | tail -n 1 | grep -o 'hilbert[0-9]*' | head -n1",
-            shell=True,
-            check=True,
-            capture_output=True,
-        )
-        .stdout.decode()
-        .strip()
-    )
+    # job_id = job_id.split(".")[0]
+    # host = (
+    #     subprocess.run(
+    #         f"qstat -f {job_id} -n | tail -n 1 | grep -o 'hilbert[0-9]*' | head -n1",
+    #         shell=True,
+    #         check=True,
+    #         capture_output=True,
+    #     )
+    #     .stdout.decode()
+    #     .strip()
+    # )
 
     # Construct ssh command
-    cmd: str = "OU" if args.output else "ER"
-    cmd = f"tail -f /var/spool/pbs/spool/{job_id}.hpc-batch.{cmd}"
-    cmd = f'ssh -i ~/.ssh/id_int {host} "{cmd}"'
+    suffix: str = "out" if args.output else "err"
+    path: Path = Path(f"/pc2/users/u/{USER_NAME}/job_logs")
+    path = next(path.glob(f"*_{job_id}.{suffix}"))
+    cmd = f"tail -vf {path}"
 
     # Execute command
     subprocess.run(cmd, shell=True, check=True)
