@@ -52,11 +52,12 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
 export HF_DATASETS_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 export HF_EVALUATE_OFFLINE=1
+export HF_HUB_OFFLINE=1
 
 # Note: These names are correct, one starts with HF_... and the other with HUGGINGFACE_...
 # https://huggingface.co/docs/datasets/en/cache#cache-directory
 export HF_DATASETS_CACHE="/gpfs/project/${USER_NAME}/models/huggingface/datasets/"
-export HUGGINGFACE_HUB_CACHE="/gpfs/project/$USER_NAME/models/huggingface/hub/"
+export HUGGINGFACE_HUB_CACHE="/gpfs/project/${USER_NAME}/models/huggingface/hub/"
 
 # Set Offline mode for Weights & Biases
 # https://docs.wandb.ai/guides/technical-faq/setup#can-i-run-wandb-offline
