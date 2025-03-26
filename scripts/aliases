@@ -55,6 +55,9 @@ alias src="source ~/.bash_profile"
 alias c="clear"
 alias cleanup="rm -r wandb; find . -type d -name \"__pycache__\" -exec rm -r {} +"
 
+# Alias for deleting jobs in the queue
+alias qdel="scancel"
+
 # Python aliases
 alias py="python3"
 
