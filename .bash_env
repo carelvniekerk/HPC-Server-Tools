@@ -24,13 +24,11 @@
 # limitations under the License.
 
 # Define user information
-export USER_NAME="udue006"
+export USER_NAME="lmfellow_milicagasic"
 export SETUP_COMPLETE=True
-export PYTHON_VERSION="3.12.3-GCCcore-13.3.0"
-export CUDA_VERSION="12.6.0"
 
 # HPC Server Tools path
-export HPC_USER_ROOT="/pc2/users/u"
+export HPC_USER_ROOT="/home"
 export HPC_TOOLS_PATH="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/hpc_server_tools"
 
 # Setup the Index URL for UV
@@ -55,8 +53,8 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
 
 # Note: These names are correct, one starts with HF_... and the other with HUGGINGFACE_...
 # https://huggingface.co/docs/datasets/en/cache#cache-directory
-export HF_DATASETS_CACHE="/scratch/hpc-t3t-udue/DSML/${USER_NAME}/models/huggingface/datasets/"
-export HUGGINGFACE_HUB_CACHE="/scratch/hpc-t3t-udue/DSML/$USER_NAME/models/huggingface/hub/"
+# export HF_DATASETS_CACHE="/scratch/hpc-t3t-udue/DSML/${USER_NAME}/models/huggingface/datasets/"
+# export HUGGINGFACE_HUB_CACHE="/scratch/hpc-t3t-udue/DSML/$USER_NAME/models/huggingface/hub/"
 
 # Set Offline mode for Weights & Biases
 # https://docs.wandb.ai/guides/technical-faq/setup#can-i-run-wandb-offline
