@@ -123,7 +123,7 @@ function set_prompt {
         
         # Calculate the padding needed
         local date_length=${#date_format}
-        local date_length=$((date_length - 30))
+        local date_length=$((date_length - 33))
         local padding_length=$((term_width - prompt_length - date_length))
         local padding=$(printf '%*s' $padding_length)
 
