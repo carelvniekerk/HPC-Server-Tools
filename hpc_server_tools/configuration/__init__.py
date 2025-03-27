@@ -43,7 +43,7 @@ if "USER_NAME" not in environ:
 USER_NAME: str = environ["USER_NAME"]
 PROJECTS_ROOT_DIR: Path = Path("/home")
 USER_ROOT_DIR: Path = PROJECTS_ROOT_DIR / USER_NAME
-LOGS_PATH: Path = USER_ROOT_DIR / "job_logs"
+LOGS_PATH: Path = USER_ROOT_DIR / "vniekerk" / "job_logs"
 HPC_TOOLS_PATH: Path = Path(__file__).parent.parent
 
 # Resources
