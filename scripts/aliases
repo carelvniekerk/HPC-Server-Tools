@@ -28,7 +28,7 @@
 # alias load_tmux="module load tools/tmux/3.3a"
 # alias load_installation_utils="module load intel/xe2020.4 gcc/11.1.0 SentencePiece/0.1.94"
 # alias base_installers='load_python && load_cuda && load_installation_utils'
-# alias base='load_python && load_cuda && load_tmux'
+alias base=''
 
 # Aliases for user tools
 export HPC_TOOLS_PYTHON="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.venv/bin/python"
