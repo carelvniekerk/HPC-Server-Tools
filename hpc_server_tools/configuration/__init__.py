@@ -41,7 +41,7 @@ if "USER_NAME" not in environ:
     raise KeyError(msg)
 
 USER_NAME: str = environ["USER_NAME"]
-PROJECTS_ROOT_DIR: Path = Path("/pc2/users/u")
+PROJECTS_ROOT_DIR: Path = Path("/home")
 USER_ROOT_DIR: Path = PROJECTS_ROOT_DIR / USER_NAME
 LOGS_PATH: Path = USER_ROOT_DIR / "job_logs"
 HPC_TOOLS_PATH: Path = Path(__file__).parent.parent
@@ -57,5 +57,5 @@ def get_node_list(prefix: str, indices: list[int | str]) -> list[str]:
 
 
 COMPUTE_NODE_GROUPS: dict[str, list[str]] = {
-    "A100-40GB": get_node_list("n2gpu12", [f"{i:02d}" for i in range(1, 33)]),
+    "A100-80GB": get_node_list("lmgpu-node-", [f"{i:02d}" for i in range(1, 10)]),
 }

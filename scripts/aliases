@@ -59,6 +59,7 @@ alias cleanup="rm -r wandb; find . -type d -name \"__pycache__\" -exec rm -r {} 
 alias qdel="scancel"
 
 # Python aliases
+alias python="python3"
 alias py="python3"
 
 # Tmux aliases
