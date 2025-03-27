@@ -58,7 +58,7 @@ def main() -> None:
             if vm_config.accelerator_model != AcceleratorModel.DEFAULT
             else "generic"
         )
-        command.append(f"--gres=gpu:{gpu_type}:{vm_config.num_gpus}")
+        command.append(f"--gres=gpu:{vm_config.num_gpus}")
 
     command.append(f"-t {vm_config.walltime}")
 

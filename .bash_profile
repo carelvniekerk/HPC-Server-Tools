@@ -34,10 +34,9 @@ home
 if [[ $(hostname) == *"login"* ]]
 then
     # Load only python and display status on login node (Python is needed for the utils)
-    load_python &&
     clear &&
     qs
-else
-    # Load all base modules needed during dev and running and activate latest venv
-    base
+# else
+#     # Load all base modules needed during dev and running and activate latest venv
+#     base
 fi

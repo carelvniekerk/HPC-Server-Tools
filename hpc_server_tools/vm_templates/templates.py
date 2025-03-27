@@ -86,8 +86,6 @@ A100_40GB: VMConfig = VMConfig(
 )
 
 A100_80GB: VMConfig = VMConfig(
-    queue=HPCQueue.CUDA,
     memory=96,
     accelerator_model=AcceleratorModel.A100,
-    architecture=Architecture.ZEN3,
 )

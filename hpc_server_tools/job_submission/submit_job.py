@@ -85,15 +85,15 @@ def build_preamble(vm_config: VMConfig, job_name: str) -> str:
             if vm_config.accelerator_model != AcceleratorModel.DEFAULT
             else ""
         )
-        preamble += f"#SBATCH --gres=gpu:{gpu_type}:{vm_config.num_gpus}\n"
+        preamble += f"#SBATCH --gres=gpu:{vm_config.num_gpus}\n"
 
     preamble += f"#SBATCH --output={LOGS_PATH}/%x_%j.out\n"
     preamble += f"#SBATCH --error={LOGS_PATH}/%x_%j.err\n"
     preamble += f"#SBATCH -J {job_name}\n\n"
 
-    preamble += "# Load environment\n"
-    preamble += "source ~/.bashrc\n"
-    preamble += "load_python\nload_cuda"
+    # preamble += "# Load environment\n"
+    # preamble += "source ~/.bashrc\n"
+    # preamble += "load_python\nload_cuda"
 
     return preamble
 
