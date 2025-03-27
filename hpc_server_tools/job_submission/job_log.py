@@ -32,7 +32,7 @@ from rich.console import Console
 from rich.prompt import Prompt
 from rich.table import Table
 
-from hpc_server_tools.configuration import USER_NAME
+from hpc_server_tools.configuration import LOGS_PATH, USER_NAME
 
 
 def get_jobs(username: str) -> list[dict[str, str | int]]:
@@ -115,9 +115,8 @@ if __name__ == "__main__":
 
     # Construct ssh command
     suffix: str = "out" if args.output else "err"
-    path: Path = Path(f"/pc2/users/u/{USER_NAME}/job_logs")
-    path = next(path.glob(f"*_{job_id}.{suffix}"))
-    cmd = f"tail -vf {path}"
+    path: Path = next(LOGS_PATH.glob(f"*_{job_id}.{suffix}"))
+    cmd: str = f"tail -vf {path}"
 
     # Execute command
     subprocess.run(cmd, shell=True, check=True)
