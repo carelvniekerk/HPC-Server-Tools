@@ -47,9 +47,9 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
     --separator="─" --scrollbar="│" --layout="reverse" --info="right"'
 
 # Setup Offline mode for Huggingface
-# export HF_DATASETS_OFFLINE=1
-# export TRANSFORMERS_OFFLINE=1
-# export HF_EVALUATE_OFFLINE=1
+export HF_DATASETS_OFFLINE=1
+export TRANSFORMERS_OFFLINE=1
+export HF_EVALUATE_OFFLINE=1
 
 # Note: These names are correct, one starts with HF_... and the other with HUGGINGFACE_...
 # https://huggingface.co/docs/datasets/en/cache#cache-directory
@@ -58,7 +58,7 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
 
 # Set Offline mode for Weights & Biases
 # https://docs.wandb.ai/guides/technical-faq/setup#can-i-run-wandb-offline
-# export WANDB_MODE=offline
+export WANDB_MODE=offline
 
 # Set location for tmux dir
 export TMUX_TMPDIR="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.tmux"
