@@ -1,13 +1,13 @@
 [project]
 name = "hpc-server-tools"
-version = "0.1.0"
-description = "Server Side Toolkit for HHU HPC Hilbert"
+version = "0.2.0"
+description = "Server Side Toolkit for Lamarr Cluster"
 authors = [{ name = "Carel van Niekerk", email = "cvanniekerk@hhu.de" }]
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "gpustat >= 1.1.1",
-    "psutil >= 6.0.0",
+    "psutil >= 6.1.0",
     "types-psutil>=6.1.0.20241221",
     "rich >= 13.7.1",
 ]
@@ -18,11 +18,11 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 extend = "~/.config/ruff/config.toml"
-target-version = "py312"
+target-version = "py313"
 
 # Configuration for Mypy (Python static type checker)
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 [[tool.mypy.overrides]]
 module = ["gpustat"]
 ignore_missing_imports = true
