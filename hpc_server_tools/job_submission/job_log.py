@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     # Construct ssh command
     suffix: str = "out" if args.output else "err"
-    path: Path = Path(f"/pc2/users/u/{USER_NAME}/job_logs")
+    path: Path = Path(f"/pc2/users/t/{USER_NAME}/job_logs")
     path = next(path.glob(f"*_{job_id}.{suffix}"))
     cmd = f"tail -vf {path}"
 
