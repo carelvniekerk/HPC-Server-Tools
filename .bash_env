@@ -26,7 +26,7 @@
 # Define user information
 export USER_NAME="trust01"
 export SETUP_COMPLETE=True
-export PYTHON_VERSION="3.12.3-GCCcore-13.3.0"
+export PYTHON_VERSION="3.13.1-GCCcore-14.2.0"
 export CUDA_VERSION="12.6.0"
 
 # HPC Server Tools path
