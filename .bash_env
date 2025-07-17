@@ -55,8 +55,8 @@ export FZF_DEFAULT_OPTS=$FZF_DEFAULT_OPTS'
 
 # Note: These names are correct, one starts with HF_... and the other with HUGGINGFACE_...
 # https://huggingface.co/docs/datasets/en/cache#cache-directory
-export HF_DATASETS_CACHE="/scratch/hpc-t3t-udue/DSML/${USER_NAME}/models/huggingface/datasets/"
-export HUGGINGFACE_HUB_CACHE="/scratch/hpc-t3t-udue/DSML/$USER_NAME/models/huggingface/hub/"
+export HF_DATASETS_CACHE="/scratch/hpc-prf-trust/huggingface/datasets/"
+export HUGGINGFACE_HUB_CACHE="/scratch/hpc-prf-trust/huggingface/hub/"
 
 # Set Offline mode for Weights & Biases
 # https://docs.wandb.ai/guides/technical-faq/setup#can-i-run-wandb-offline
