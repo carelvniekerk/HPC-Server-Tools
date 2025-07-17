@@ -30,7 +30,7 @@ export PYTHON_VERSION="3.12.3-GCCcore-13.3.0"
 export CUDA_VERSION="12.6.0"
 
 # HPC Server Tools path
-export HPC_USER_ROOT="/pc2/users/u"
+export HPC_USER_ROOT="/pc2/users/t"
 export HPC_TOOLS_PATH="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/hpc_server_tools"
 
 # Setup the Index URL for UV
