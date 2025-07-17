@@ -39,7 +39,7 @@ clear() (
 )
 
 # List all aliases grouped by category
-export HPC_TOOLS_PYTHON="/gpfs/project/${USER_NAME}/.usr_tls/.venv/bin/python"
+export HPC_TOOLS_PYTHON="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.venv/bin/python"
 function als(){
     alias | ${HPC_TOOLS_PYTHON} "${HPC_TOOLS_PATH}/terminal_plugins/aliases_cheatsheet.py" "$@"
 }
