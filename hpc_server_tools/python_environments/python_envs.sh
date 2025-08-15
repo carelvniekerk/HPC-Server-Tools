@@ -25,10 +25,10 @@
 # UV commands
 alias uva='uv add'
 alias uvt='uv tree'
-alias uvs='uv sync --no-sources'
+alias uvs='uv sync'
 alias uvi='uv init --package'
 alias uvrm='uv remove'
-alias uvr='uv run --no-sources'
+alias uvr='uv run'
 alias uvu='uv python pin'
 alias upy='uv run python'
 alias uup='rm uv.lock && uv sync'

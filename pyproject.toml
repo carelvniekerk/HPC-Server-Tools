@@ -15,14 +15,3 @@ dependencies = [
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.ruff]
-extend = "~/.config/ruff/config.toml"
-target-version = "py313"
-
-# Configuration for Mypy (Python static type checker)
-[tool.mypy]
-python_version = "3.13"
-[[tool.mypy.overrides]]
-module = ["gpustat"]
-ignore_missing_imports = true
