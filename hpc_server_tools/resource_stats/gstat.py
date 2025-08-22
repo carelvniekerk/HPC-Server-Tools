@@ -230,11 +230,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Monitor CPU, RAM, and GPU usage")
     parser.add_argument(
         "--id",
-        type=int,
-        nargs="+",
+        type=str,
         help="List of GPU indices to monitor",
-        default=[],
+        default="",
     )
     args = parser.parse_args()
+
+    args.id = args.id.split(" ") if args.id else []
+    args.id = [int(i) for i in args.id if i.isdigit()]
 
     curses.wrapper(display_info, args.id)
