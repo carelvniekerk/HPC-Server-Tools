@@ -13,16 +13,9 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.8.8,<0.9.0"]
+build-backend = "uv_build"
 
-[tool.ruff]
-extend = "~/.config/ruff/config.toml"
-target-version = "py312"
-
-# Configuration for Mypy (Python static type checker)
-[tool.mypy]
-python_version = "3.12"
-[[tool.mypy.overrides]]
-module = ["gpustat"]
-ignore_missing_imports = true
+[tool.uv.build-backend]
+module-name = "hpc-server-tools"
+module-root = ""
