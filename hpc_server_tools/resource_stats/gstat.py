@@ -236,7 +236,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    args.id = args.id.split(" ") if args.id else []
+    args.id = args.id.split(",") if args.id else []
     args.id = [int(i) for i in args.id if i.isdigit()]
 
     curses.wrapper(display_info, args.id)
