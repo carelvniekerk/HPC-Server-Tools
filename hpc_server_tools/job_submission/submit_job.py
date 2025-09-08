@@ -128,7 +128,7 @@ def add_quotes_to_str_argument(argument: str, seperator: str = "=") -> str:
 
 def get_python_commands(path: Path, arguments: str) -> str:
     """Get the commands from a python script and add the arguments."""
-    if "--" in arguments:
+    if "--" in arguments.split(" -- ")[0]:
         arguments_list: list[str] = (
             [arg.split("--")[-1] for arg in arguments.split(" --") if arg]
             if arguments
@@ -189,7 +189,7 @@ def get_python_commands(path: Path, arguments: str) -> str:
 
 def get_uvrun_commands(path: Path, arguments: str) -> str:
     """Create the prun command."""
-    if "--" in arguments:
+    if "--" in arguments.split(" -- ")[0]:
         arguments_list: list[str] = (
             [arg.split("--")[-1] for arg in arguments.split(" --") if arg]
             if arguments
