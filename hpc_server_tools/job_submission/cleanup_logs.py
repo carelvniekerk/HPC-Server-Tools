@@ -38,15 +38,14 @@ def main() -> None:
 
     # Completed jobs
     job_ids: list[str] = [
-        file.name.replace(".OU", "") for file in LOGS_PATH.glob("*.OU")
+        file.name.replace(".out", "") for file in LOGS_PATH.glob("*.out")
     ]
 
     # Files to remove (temp files and completed jobs)
-    files = [
-        LOGS_PATH / file
-        for job in job_ids
-        for file in [f"{job}.ER", f"{job}.OU", f"{job}.sh"]
-    ] + temps
+    files: list[Path] = temps
+    for job in job_ids:
+        _files = list(LOGS_PATH.glob(f"*{job}.*"))
+        files.extend(_files)
 
     # Remove files
     for file in files:
