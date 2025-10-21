@@ -23,7 +23,7 @@ pip3 install --user uv fzf-bin
 
 Clone the user_tools repository to your home directory on the HPC system. 
 ```bash
-cd /gpfs/project/<user_name>
+cd /pc2/users/t/<user_name>
 git clone https://gitlab.cs.uni-duesseldorf.de/dsml/user_tools.git --branch noctua2_cluster .usr_tls
 ```
 
