@@ -18,7 +18,7 @@ module load lang/Python/3.13.1-GCCcore-14.2.0
 
 Install the required packages. 
 ```bash
-pip3 install -i http://pypi.repo.test.hhu.de/simple/ --trusted-host pypi.repo.test.hhu.de --user uv fzf-bin
+pip3 install --user uv fzf-bin
 ```
 
 Clone the user_tools repository to your home directory on the HPC system. 
