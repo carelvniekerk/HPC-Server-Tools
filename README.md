@@ -24,7 +24,7 @@ pip3 install --user uv fzf-bin
 Clone the user_tools repository to your home directory on the HPC system. 
 ```bash
 cd /pc2/users/t/<user_name>
-git clone https://gitlab.cs.uni-duesseldorf.de/dsml/user_tools.git --branch noctua2_cluster .usr_tls
+git clone https://github.com/carelvniekerk/HPC-Server-Tools.git --branch noctua2_cluster .usr_tls
 ```
 
 Run the installation script to install the tools. 
