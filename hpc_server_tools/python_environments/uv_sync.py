@@ -58,6 +58,8 @@ def parse_uvgroups(path: Path) -> list[str]:
             flags.append("--dev")
         else:
             flags.append(f"--group={group}")
+    
+    flags = ["--all-groups"] if not flags else flags
 
     return flags
 
