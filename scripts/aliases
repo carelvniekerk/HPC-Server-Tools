@@ -53,7 +53,7 @@ alias ll='ls -l --color=auto'
 alias ls='ls --color=auto'
 alias src="source ~/.bash_profile"
 alias c="clear"
-alias cleanup="rm -r wandb; find . -type d -name \"__pycache__\" -exec rm -r {} +"
+alias cleanup="rm -r wandb_logs; rm .deepeval; find . -type d -name \"__pycache__\" -exec rm -r {} +"
 alias bup="pip install --upgrade pip fzf-bin uv"
 
 # Python aliases
