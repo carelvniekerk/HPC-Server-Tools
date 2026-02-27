@@ -166,7 +166,7 @@ def get_python_commands(path: Path, arguments: str) -> str:
             "\n# Move to project folder",
             f"cd {project_poetry_root!s}\n",
             "# Update uv dependencies",
-            "uv sync --all-groups\n",
+            "uv-sync\n",
             *command,
         ]
     except FileNotFoundError:
@@ -215,7 +215,7 @@ def get_uvrun_commands(path: Path, arguments: str) -> str:
         "\n# Move to project folder",
         f"cd {project_root!s}\n",
         "# Update dependencies",
-        "uv sync --all-groups\n",
+        "uv-sync\n",
         *command,
     ]
 
