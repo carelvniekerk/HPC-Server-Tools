@@ -25,7 +25,7 @@
 # UV commands
 alias uva='uv add'
 alias uvt='uv tree'
-alias uvs='uv sync'
+alias uvs='uv-sync'
 alias uvi='uv init --package'
 alias uvrm='uv remove'
 alias uvr='uv run'
@@ -33,6 +33,10 @@ alias uvu='uv python pin'
 alias upy='uv run python'
 alias uup='rm uv.lock && uv sync'
 
+uv-sync() {
+    local sync_script="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/hpc_server_tools/python_environments/uv_sync.py"
+    uv run --active $sync_script $1
+}
 
 # Custom cd function for auto venv changing
 cd() {
