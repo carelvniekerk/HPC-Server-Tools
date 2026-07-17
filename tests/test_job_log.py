@@ -3,12 +3,51 @@
 import os
 import subprocess
 import unittest
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
+from rich.console import Console
+
 os.environ.setdefault("USER_NAME", "test-user")
 
-from hpc_server_tools.job_submission.job_log import get_job_log_path  # noqa: E402
+from hpc_server_tools.job_submission.job_log import (  # noqa: E402
+    get_job_log_path,
+    get_job_log_path_or_exit,
+    get_jobs,
+)
+
+
+class GetJobsTest(unittest.TestCase):
+    """Test the stable, non-truncated ``squeue`` output format."""
+
+    @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
+    def test_preserves_long_job_names(self, run_mock) -> None:
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout=(
+                "33641305_200|deepmath-4b-s66750-68750-chunk256|trust03|R\n"
+                "33636517|DevSession|trust03|R\n"
+            ),
+        )
+
+        jobs = get_jobs("trust03")
+
+        self.assertEqual(jobs[0]["name"], "deepmath-4b-s66750-68750-chunk256")
+        self.assertEqual(jobs[1]["name"], "DevSession")
+        run_mock.assert_called_once_with(
+            [
+                "squeue",
+                "--user",
+                "trust03",
+                "--noheader",
+                "--format=%i|%.40j|%u|%t",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
 
 
 class GetJobLogPathTest(unittest.TestCase):
@@ -41,6 +80,23 @@ class GetJobLogPathTest(unittest.TestCase):
 
         self.assertIsNone(get_job_log_path("43", output=True))
         self.assertIsNone(get_job_log_path("43", output=False))
+
+    @patch("hpc_server_tools.job_submission.job_log.get_job_log_path")
+    def test_cli_reports_transient_scontrol_failure_without_traceback(
+        self, get_path_mock
+    ) -> None:
+        get_path_mock.side_effect = subprocess.CalledProcessError(1, ["scontrol"])
+        output = StringIO()
+        console = Console(file=output, color_system=None)
+
+        with self.assertRaises(SystemExit) as exit_context:
+            get_job_log_path_or_exit("44", output=True, console=console)
+
+        self.assertEqual(exit_context.exception.code, 1)
+        self.assertIn(
+            "Could not query Slurm log metadata for job 44", output.getvalue()
+        )
+        self.assertIn("job may have finished", output.getvalue())
 
 
 if __name__ == "__main__":

@@ -53,4 +53,5 @@ submit_job --job_name my_python_job --job_script my_python_script.py --job_scrip
 - `cleanup_job_logs`: A tool to clean up job logs on the HPC system. The tool will remove all job logs for completed jobs.
 - `job_log`: Follow the selected Slurm batch job's stdout log. Use `job_log --error` (or `--stderr`) to follow
   stderr instead. Stdout normally contains program output; stderr contains errors, warnings, and some progress output.
+  The selection table requests longer job names from Slurm and identifies the stream currently being followed.
   Interactive allocations write to their attached terminal or tmux session and may not have Slurm log files.

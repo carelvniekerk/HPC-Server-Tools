@@ -37,29 +37,34 @@ from hpc_server_tools.configuration import USER_NAME
 
 def get_jobs(username: str) -> list[dict[str, str | int]]:
     """Get a list of jobs for a user on the HPC cluster."""
-    raw_jobs: list[str] = (
-        subprocess.run(
-            f"squeue --user {username}",
-            shell=True,
-            check=True,
-            capture_output=True,
-        )
-        .stdout.decode()
-        .split("\n")[1:-1]
+    result = subprocess.run(
+        [
+            "squeue",
+            "--user",
+            username,
+            "--noheader",
+            "--format=%i|%.40j|%u|%t",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
     )
-    raw_jobs_split: list[list[str]] = [job.split() for job in raw_jobs]
-
-    jobs: list[dict[str, str | int]] = [
-        {
-            "job_num": idx,
-            "jobid": job[0],
-            "name": job[2],
-            "user": job[3],
-            "status": job[4],
-        }
-        for idx, job in enumerate(raw_jobs_split)
-    ]
-
+    jobs: list[dict[str, str | int]] = []
+    for line in result.stdout.splitlines():
+        if not line.strip():
+            continue
+        job_id, name, user, status = (
+            field.strip() for field in line.split("|", maxsplit=3)
+        )
+        jobs.append(
+            {
+                "job_num": len(jobs),
+                "jobid": job_id,
+                "name": name,
+                "user": user,
+                "status": status,
+            }
+        )
     return jobs
 
 
@@ -79,6 +84,22 @@ def get_job_log_path(job_id: str, *, output: bool) -> Path | None:
             if value and value not in {"(null)", "N/A"}:
                 return Path(value)
     return None
+
+
+def get_job_log_path_or_exit(
+    job_id: str, *, output: bool, console: Console
+) -> Path | None:
+    """Resolve a job log path or report a transient Slurm query failure."""
+    try:
+        return get_job_log_path(job_id, output=output)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        console.print(
+            f"[bold red]Could not query Slurm log metadata for job {job_id}.[/bold red]"
+        )
+        console.print(
+            "The job may have finished since the table was displayed, or scontrol may be unavailable."
+        )
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":
@@ -116,7 +137,7 @@ if __name__ == "__main__":
     )
     table.add_column("Job Number", style="blue")
     table.add_column("Job ID", style="blue")
-    table.add_column("Name", style="blue")
+    table.add_column("Name", style="blue", min_width=24, max_width=40, no_wrap=True)
     table.add_column("Job Status", style="blue")
 
     for job in jobs:
@@ -145,7 +166,7 @@ if __name__ == "__main__":
             console.print("[bold red]Invalid job number[/bold red]")
 
     job_id = str(jobs[int(job_index)]["jobid"])
-    path = get_job_log_path(job_id, output=follow_output)
+    path = get_job_log_path_or_exit(job_id, output=follow_output, console=console)
     if path is None:
         console.print(
             f"[bold yellow]Slurm has no {stream_name} log registered for job {job_id}.[/bold yellow]"
