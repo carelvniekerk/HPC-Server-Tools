@@ -63,15 +63,57 @@ def get_jobs(username: str) -> list[dict[str, str | int]]:
     return jobs
 
 
+def get_job_log_path(job_id: str, *, output: bool) -> Path | None:
+    """Return the log path registered with Slurm, if the job has one."""
+    result = subprocess.run(
+        ["scontrol", "show", "job", "-o", job_id],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    field = "StdOut" if output else "StdErr"
+    prefix = f"{field}="
+    for token in result.stdout.split():
+        if token.startswith(prefix):
+            value = token.removeprefix(prefix)
+            if value and value not in {"(null)", "N/A"}:
+                return Path(value)
+    return None
+
+
 if __name__ == "__main__":
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--output", action="store_true")
+    stream_group = parser.add_mutually_exclusive_group()
+    stream_group.add_argument(
+        "--error",
+        "--stderr",
+        action="store_true",
+        help="Follow the Slurm stderr log instead of the default stdout log",
+    )
+    stream_group.add_argument(
+        "--output",
+        "--stdout",
+        action="store_true",
+        help="Follow the Slurm stdout log (the default; retained for compatibility)",
+    )
     args = parser.parse_args()
     console: Console = Console()
+    follow_output = args.output or not args.error
+    stream_name = "stdout" if follow_output else "stderr"
 
     jobs: list[dict[str, str | int]] = get_jobs(USER_NAME)
 
-    table: Table = Table(title="Select a Job", box=box.SQUARE)
+    console.print(
+        "[bold]Slurm batch jobs normally expose two live log streams:[/bold]\n"
+        "  [cyan]stdout[/cyan]: normal program output (followed by default; optionally use --output)\n"
+        "  [cyan]stderr[/cyan]: errors, warnings, and some progress output (use --error)\n"
+        "Interactive allocations normally write to their attached terminal or tmux session."
+    )
+    console.print(f"[bold green]Selected stream: {stream_name}[/bold green]")
+
+    table: Table = Table(
+        title=f"Select a Job — following {stream_name}", box=box.SQUARE
+    )
     table.add_column("Job Number", style="blue")
     table.add_column("Job ID", style="blue")
     table.add_column("Name", style="blue")
@@ -87,6 +129,10 @@ if __name__ == "__main__":
             style=row_style,
         )
 
+    if not jobs:
+        console.print("[bold yellow]No active jobs found.[/bold yellow]")
+        raise SystemExit(0)
+
     console.print(table)
 
     found: bool = False
@@ -98,26 +144,17 @@ if __name__ == "__main__":
         else:
             console.print("[bold red]Invalid job number[/bold red]")
 
-    job_id: str = jobs[int(job_index)]["jobid"]  # type: ignore[assignment]
+    job_id = str(jobs[int(job_index)]["jobid"])
+    path = get_job_log_path(job_id, output=follow_output)
+    if path is None:
+        console.print(
+            f"[bold yellow]Slurm has no {stream_name} log registered for job {job_id}.[/bold yellow]"
+        )
+        console.print(
+            "Interactive allocations normally write to their attached terminal or tmux session; "
+            "select a batch job to follow a Slurm log."
+        )
+        raise SystemExit(1)
 
-    # Get host
-    # job_id = job_id.split(".")[0]
-    # host = (
-    #     subprocess.run(
-    #         f"qstat -f {job_id} -n | tail -n 1 | grep -o 'hilbert[0-9]*' | head -n1",
-    #         shell=True,
-    #         check=True,
-    #         capture_output=True,
-    #     )
-    #     .stdout.decode()
-    #     .strip()
-    # )
-
-    # Construct ssh command
-    suffix: str = "out" if args.output else "err"
-    path: Path = Path(f"/pc2/users/t/{USER_NAME}/job_logs")
-    path = next(path.glob(f"*_{job_id}.{suffix}"))
-    cmd = f"tail -vf {path}"
-
-    # Execute command
-    subprocess.run(cmd, shell=True, check=True)
+    console.print(f"Following {stream_name} for job {job_id}: {path}")
+    subprocess.run(["tail", "-F", str(path)], check=True)
