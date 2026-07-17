@@ -77,13 +77,24 @@ def get_job_log_path(job_id: str, *, output: bool) -> Path | None:
         text=True,
     )
     field = "StdOut" if output else "StdErr"
-    prefix = f"{field}="
-    for token in result.stdout.split():
-        if token.startswith(prefix):
-            value = token.removeprefix(prefix)
-            if value and value not in {"(null)", "N/A"}:
-                return Path(value)
-    return None
+    metadata = {
+        key: value
+        for token in result.stdout.split()
+        if "=" in token
+        for key, value in [token.split("=", maxsplit=1)]
+    }
+    value = metadata.get(field)
+    if not value or value in {"(null)", "/dev/null", "N/A"}:
+        return None
+
+    path = Path(value)
+    if path.is_absolute():
+        return path
+
+    work_dir = metadata.get("WorkDir")
+    if not work_dir or work_dir in {"(null)", "N/A"}:
+        return None
+    return Path(work_dir) / path
 
 
 def get_job_log_path_or_exit(

@@ -19,7 +19,7 @@ from hpc_server_tools.job_submission.job_log import (  # noqa: E402
 
 
 class GetJobsTest(unittest.TestCase):
-    """Test the stable, non-truncated ``squeue`` output format."""
+    """Test the stable ``squeue`` format with a wider fixed-width job name."""
 
     @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
     def test_preserves_long_job_names(self, run_mock) -> None:
@@ -80,6 +80,37 @@ class GetJobLogPathTest(unittest.TestCase):
 
         self.assertIsNone(get_job_log_path("43", output=True))
         self.assertIsNone(get_job_log_path("43", output=False))
+
+    @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
+    def test_resolves_relative_paths_against_slurm_work_dir(self, run_mock) -> None:
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout=(
+                "JobId=45 WorkDir=/scratch/project "
+                "StdOut=logs/slurm-45.out StdErr=slurm-45.err"
+            ),
+        )
+
+        self.assertEqual(
+            get_job_log_path("45", output=True),
+            Path("/scratch/project/logs/slurm-45.out"),
+        )
+        self.assertEqual(
+            get_job_log_path("45", output=False),
+            Path("/scratch/project/slurm-45.err"),
+        )
+
+    @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
+    def test_treats_dev_null_as_no_registered_log(self, run_mock) -> None:
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout="JobId=46 WorkDir=/scratch/project StdOut=/dev/null StdErr=/dev/null",
+        )
+
+        self.assertIsNone(get_job_log_path("46", output=True))
+        self.assertIsNone(get_job_log_path("46", output=False))
 
     @patch("hpc_server_tools.job_submission.job_log.get_job_log_path")
     def test_cli_reports_transient_scontrol_failure_without_traceback(
