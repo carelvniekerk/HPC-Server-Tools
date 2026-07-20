@@ -16,6 +16,7 @@ from hpc_server_tools.job_submission.job_log import (  # noqa: E402
     get_job_log_path_or_exit,
     get_jobs,
     get_jobs_or_exit,
+    follow_log_or_exit,
     parse_scontrol_metadata,
     SQUEUE_FIELD_SEPARATOR,
 )
@@ -47,6 +48,7 @@ class GetJobsTest(unittest.TestCase):
                 "--user",
                 "trust03",
                 "--noheader",
+                "--array",
                 f"--format=%i{SQUEUE_FIELD_SEPARATOR}%.40j{SQUEUE_FIELD_SEPARATOR}%u{SQUEUE_FIELD_SEPARATOR}%t",
             ],
             check=True,
@@ -69,6 +71,17 @@ class GetJobsTest(unittest.TestCase):
         jobs = get_jobs("trust03")
 
         self.assertEqual(jobs[0]["name"], "train|debug")
+
+    @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
+    def test_expands_job_arrays_before_log_selection(self, run_mock) -> None:
+        """Request one squeue row per array element so scontrol receives a concrete ID."""
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout=""
+        )
+
+        get_jobs("trust03")
+
+        self.assertIn("--array", run_mock.call_args.args[0])
 
     @patch("hpc_server_tools.job_submission.job_log.get_jobs")
     def test_cli_reports_squeue_failure_without_traceback(self, get_jobs_mock) -> None:
@@ -195,6 +208,22 @@ class GetJobLogPathTest(unittest.TestCase):
             "Could not query Slurm log metadata for job 44", output.getvalue()
         )
         self.assertIn("job may have finished", output.getvalue())
+
+
+class FollowLogTest(unittest.TestCase):
+    """Test clean reporting of failures from the local log follower."""
+
+    @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
+    def test_reports_missing_tail_without_traceback(self, run_mock) -> None:
+        run_mock.side_effect = FileNotFoundError
+        output = StringIO()
+        console = Console(file=output, color_system=None)
+
+        with self.assertRaises(SystemExit) as exit_context:
+            follow_log_or_exit(Path("/scratch/job.out"), console=console)
+
+        self.assertEqual(exit_context.exception.code, 1)
+        self.assertIn("tail is unavailable", output.getvalue())
 
 
 if __name__ == "__main__":

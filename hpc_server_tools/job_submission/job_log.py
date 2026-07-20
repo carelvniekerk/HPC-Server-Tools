@@ -47,6 +47,7 @@ def get_jobs(username: str) -> list[dict[str, str | int]]:
             "--user",
             username,
             "--noheader",
+            "--array",
             f"--format=%i{SQUEUE_FIELD_SEPARATOR}%.40j{SQUEUE_FIELD_SEPARATOR}%u{SQUEUE_FIELD_SEPARATOR}%t",
         ],
         check=True,
@@ -139,6 +140,22 @@ def get_job_log_path_or_exit(
         raise SystemExit(1) from None
 
 
+def follow_log_or_exit(path: Path, *, console: Console) -> None:
+    """Follow a resolved log path or report a local tail failure cleanly."""
+    try:
+        subprocess.run(["tail", "-F", str(path)], check=True)
+    except FileNotFoundError:
+        console.print(
+            "[bold red]Could not follow the Slurm log: tail is unavailable.[/bold red]"
+        )
+        raise SystemExit(1) from None
+    except subprocess.CalledProcessError:
+        console.print(
+            f"[bold red]The tail command failed while following {path}.[/bold red]"
+        )
+        raise SystemExit(1) from None
+
+
 if __name__ == "__main__":
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     stream_group = parser.add_mutually_exclusive_group()
@@ -206,13 +223,13 @@ if __name__ == "__main__":
     path = get_job_log_path_or_exit(job_id, output=follow_output, console=console)
     if path is None:
         console.print(
-            f"[bold yellow]Slurm has no {stream_name} log registered for job {job_id}.[/bold yellow]"
+            f"[bold yellow]Slurm has no attachable {stream_name} log path for job {job_id}.[/bold yellow]"
         )
         console.print(
-            "Interactive allocations normally write to their attached terminal or tmux session; "
-            "select a batch job to follow a Slurm log."
+            "Interactive allocations normally write to their attached terminal or tmux session. "
+            "A relative batch-log path also requires Slurm to report its working directory."
         )
         raise SystemExit(1)
 
     console.print(f"Following {stream_name} for job {job_id}: {path}")
-    subprocess.run(["tail", "-F", str(path)], check=True)
+    follow_log_or_exit(path, console=console)
