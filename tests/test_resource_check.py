@@ -11,6 +11,7 @@ from hpc_server_tools.resource_stats.resource_check import (  # noqa: E402
     format_gpu_request,
     get_empty_jobs_row,
     get_node_status,
+    get_schedulable_memory_gib,
     is_node_schedulable,
     parse_squeue_job_fields,
     SQUEUE_FIELD_SEPARATOR,
@@ -37,6 +38,26 @@ class ResourceCheckTests(unittest.TestCase):
     def test_not_responding_node_is_not_schedulable(self) -> None:
         """Match the complete state flag emitted by Slurm."""
         self.assertFalse(is_node_schedulable({"state": "IDLE+NOT_RESPONDING"}))
+
+    def test_scheduler_memory_headroom_uses_real_minus_allocated_memory(self) -> None:
+        """Report what Slurm can admit rather than momentary Linux FreeMem."""
+        status = {
+            "state": "MIXED",
+            "resources_available.mem": "485000mb",
+            "resources_assigned.mem": "53248mb",
+        }
+
+        self.assertEqual(get_schedulable_memory_gib(status), 421)
+
+    def test_unavailable_node_has_no_schedulable_memory_headroom(self) -> None:
+        """Fail closed for RAM as well as CPUs and GPUs."""
+        status = {
+            "state": "IDLE+DRAIN",
+            "resources_available.mem": "485000mb",
+            "resources_assigned.mem": "0mb",
+        }
+
+        self.assertEqual(get_schedulable_memory_gib(status), 0)
 
     def test_only_plain_idle_and_mixed_states_are_schedulable(self) -> None:
         """Fail closed for unavailable base states and compound flags."""
@@ -78,6 +99,7 @@ class ResourceCheckTests(unittest.TestCase):
                     "1:00",
                     "1",
                     "2",
+                    "52G",
                     "gpu:a100:4",
                     "n2gpu1208",
                 )
@@ -86,7 +108,8 @@ class ResourceCheckTests(unittest.TestCase):
 
         self.assertEqual(fields[3], "train|seed1")
         self.assertEqual(fields[4], "R")
-        self.assertEqual(fields[8], "gpu:a100:4")
+        self.assertEqual(fields[8], "52G")
+        self.assertEqual(fields[9], "gpu:a100:4")
 
     @patch("hpc_server_tools.resource_stats.resource_check.subprocess.run")
     def test_missing_node_state_falls_back_to_unschedulable_unknown(
@@ -107,6 +130,8 @@ class ResourceCheckTests(unittest.TestCase):
         status = get_node_status("n2gpu1201")
 
         self.assertEqual(status["state"], "UNKNOWN")
+        self.assertEqual(status["resources_available.mem"], "485000mb")
+        self.assertEqual(status["resources_assigned.mem"], "0mb")
         self.assertFalse(is_node_schedulable(status))
 
     @patch("hpc_server_tools.resource_stats.resource_check.subprocess.run")

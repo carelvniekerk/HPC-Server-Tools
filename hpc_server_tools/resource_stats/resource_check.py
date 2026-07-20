@@ -39,7 +39,7 @@ console: Console = Console()
 PROJECT_ACCOUNT: str = "hpc-prf-trust"
 SQUEUE_FIELD_SEPARATOR: str = "\x1f"
 SQUEUE_FORMAT: str = SQUEUE_FIELD_SEPARATOR.join(
-    ("%i", "%u", "%P", "%j", "%t", "%M", "%D", "%C", "%b", "%R")
+    ("%i", "%u", "%P", "%j", "%t", "%M", "%D", "%C", "%m", "%b", "%R")
 )
 SCHEDULABLE_NODE_STATES: frozenset[str] = frozenset({"IDLE", "MIXED"})
 
@@ -54,9 +54,19 @@ def get_node_status(node_name: str) -> dict[str, str]:
             capture_output=True,
         ).stdout.decode("utf-8")
         node_info: list[str] = scontrol_return.split("\n")
-        memory: str = next(line for line in node_info if "FreeMem" in line)
-        memory = memory.split("FreeMem=", 1)[-1].split(" ", 1)[0]
-        memory = f"{memory}mb"
+        memory_info: str = next(
+            line for line in node_info if "RealMemory=" in line and "AllocMem=" in line
+        )
+        real_memory_match: re.Match[str] | None = re.search(
+            r"\bRealMemory=(\d+)", memory_info
+        )
+        allocated_memory_match: re.Match[str] | None = re.search(
+            r"\bAllocMem=(\d+)", memory_info
+        )
+        if real_memory_match is None or allocated_memory_match is None:
+            raise ValueError("missing RealMemory or AllocMem")
+        real_memory: str = f"{real_memory_match.group(1)}mb"
+        allocated_memory: str = f"{allocated_memory_match.group(1)}mb"
 
         resources_info: str = next(line for line in node_info if "CfgTRES=" in line)
         cpus_available: str = resources_info.split("cpu=", 1)[-1].split(",", 1)[0]
@@ -87,8 +97,8 @@ def get_node_status(node_name: str) -> dict[str, str]:
             "resources_available.ngpus": gpus_available,
             "resources_assigned.ncpus": cpus_allocated,
             "resources_assigned.ngpus": gpus_allocated,
-            "resources_available.mem": memory,
-            "resources_assigned.mem": "0mb",
+            "resources_available.mem": real_memory,
+            "resources_assigned.mem": allocated_memory,
         }
 
     except subprocess.CalledProcessError as e:
@@ -118,6 +128,11 @@ def is_node_schedulable(node_status: dict[str, str]) -> bool:
     # Fail closed: compound flags such as IDLE+DRAIN and IDLE+INVALID_REG can
     # make an otherwise usable base state unavailable to new work.
     return state in SCHEDULABLE_NODE_STATES
+
+
+def get_schedulable_memory_gib(node_status: dict[str, str]) -> int:
+    """Return Slurm RAM request headroom, rounded down to whole GiB."""
+    return int(get_avail(node_status, "mem")) if is_node_schedulable(node_status) else 0
 
 
 def get_avail(status: dict[str, str], resource: str) -> float:
@@ -196,7 +211,7 @@ def format_gpu_request(gres_or_tres: str) -> str:
 
 def get_empty_jobs_row(*, project_jobs: bool) -> list[str]:
     """Build a placeholder row with its message in the job-name column."""
-    row: list[str] = ["-"] * (10 if project_jobs else 9)
+    row: list[str] = ["-"] * (11 if project_jobs else 10)
     name_column_index: int = 3 if project_jobs else 2
     row[name_column_index] = "No active jobs"
     return row
@@ -204,12 +219,12 @@ def get_empty_jobs_row(*, project_jobs: bool) -> list[str]:
 
 def parse_squeue_job_fields(line: str) -> list[str]:
     """Split one encoded squeue record without colliding with printable job names."""
-    fields: list[str] = line.split(SQUEUE_FIELD_SEPARATOR, 9)
-    return fields if len(fields) == 10 else []  # noqa: PLR2004
+    fields: list[str] = line.split(SQUEUE_FIELD_SEPARATOR, 10)
+    return fields if len(fields) == 11 else []  # noqa: PLR2004
 
 
 def display_jobs(*, project_jobs: bool = False) -> None:
-    """Display user or project jobs, including requested GPUs per node."""
+    """Display user or project jobs, including requested RAM and GPUs per node."""
     scheduler_filter: list[str] = (
         ["--account", PROJECT_ACCOUNT] if project_jobs else ["--user", USER_NAME]
     )
@@ -240,6 +255,7 @@ def display_jobs(*, project_jobs: bool = False) -> None:
     table.add_column("Time", justify="right")
     table.add_column("Nodes", justify="right")
     table.add_column("CPUs", justify="right")
+    table.add_column("RAM / node", justify="right")
     table.add_column("GPUs / node", justify="right")
     table.add_column("Node / reason")
 
@@ -247,9 +263,19 @@ def display_jobs(*, project_jobs: bool = False) -> None:
         fields: list[str] = parse_squeue_job_fields(line)
         if not fields:
             continue
-        job_id, user, partition, name, state, elapsed, nodes, cpus, tres, reason = (
-            fields
-        )
+        (
+            job_id,
+            user,
+            partition,
+            name,
+            state,
+            elapsed,
+            nodes,
+            cpus,
+            memory,
+            tres,
+            reason,
+        ) = fields
         state_color: str = "green" if state == "R" else "yellow"
         row: list[str] = [
             job_id,
@@ -259,6 +285,7 @@ def display_jobs(*, project_jobs: bool = False) -> None:
             elapsed,
             nodes,
             cpus,
+            memory,
             format_gpu_request(tres),
             reason,
         ]
@@ -321,26 +348,38 @@ def display_gpu_node_summary(
     if not gpu_statuses:
         return
 
-    grouped_nodes: dict[tuple[str, int, int], list[str]] = {}
+    grouped_nodes: dict[tuple[str, int, int], list[dict[str, str]]] = {}
     for status in gpu_statuses:
         total: int = int(status["resources_available.ngpus"])
         allocated: int = int(status["resources_assigned.ngpus"])
         free: int = max(total - allocated, 0) if is_node_schedulable(status) else 0
         state: str = status.get("state", "UNKNOWN")
-        grouped_nodes.setdefault((state, free, total), []).append(status["node_name"])
+        grouped_nodes.setdefault((state, free, total), []).append(status)
 
     table: Table = Table(title=f"{group_name} GPU placement", box=box.SIMPLE_HEAVY)
     table.add_column("Free GPUs / node", justify="right", style="bold")
     table.add_column("State")
     table.add_column("Count", justify="right")
     table.add_column("Total free GPUs", justify="right", style="bold")
+    table.add_column("RAM headroom / node", justify="right")
     table.add_column("Nodes")
 
-    sorted_groups: list[tuple[tuple[str, int, int], list[str]]] = sorted(
+    sorted_groups: list[tuple[tuple[str, int, int], list[dict[str, str]]]] = sorted(
         grouped_nodes.items(),
         key=lambda item: (-item[0][1], item[0][0], item[0][2]),
     )
-    for (state, free, total), node_names in sorted_groups:
+    for (state, free, total), statuses in sorted_groups:
+        node_names: list[str] = [status["node_name"] for status in statuses]
+        memory_headrooms: list[int] = [
+            get_schedulable_memory_gib(status) for status in statuses
+        ]
+        min_memory: int = min(memory_headrooms)
+        max_memory: int = max(memory_headrooms)
+        memory_range: str = (
+            f"{min_memory} GiB"
+            if min_memory == max_memory
+            else f"{min_memory}–{max_memory} GiB"
+        )
         free_color: str = "green" if free == total else "yellow" if free else "red"
         state_color: str = "green" if state in SCHEDULABLE_NODE_STATES else "red"
         table.add_row(
@@ -348,6 +387,7 @@ def display_gpu_node_summary(
             f"[{state_color}]{state}[/]",
             str(len(node_names)),
             f"{len(node_names)} × {free} = {len(node_names) * free}",
+            memory_range,
             compress_node_names(node_names),
         )
 
@@ -373,6 +413,7 @@ def display_gpu_nodes_detailed(
     table.add_column("Free", justify="right")
     table.add_column("Allocated", justify="right")
     table.add_column("Total", justify="right")
+    table.add_column("RAM headroom", justify="right")
 
     for status in sorted(gpu_statuses, key=lambda item: item["node_name"]):
         total: int = int(status["resources_available.ngpus"])
@@ -387,6 +428,7 @@ def display_gpu_nodes_detailed(
             f"[{free_color}]{free}[/]",
             str(allocated),
             str(total),
+            f"{get_schedulable_memory_gib(status)} GiB",
         )
 
     console.print(table)
