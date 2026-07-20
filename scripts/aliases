@@ -34,7 +34,91 @@ alias base='load_python && load_cuda && load_tmux'
 export HPC_TOOLS_PYTHON="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.venv/bin/python"
 alias activate="source ${HPC_TOOLS_PATH}/python_environments/activate_venv.sh"
 alias qi-setup="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/get_interactive.py"
-alias qi="source ${HPC_TOOLS_PATH}/job_submission/qi.sh"
+
+# Remove the legacy alias when this file is re-sourced in an existing shell.
+unalias qi 2>/dev/null || true
+
+qi-help() {
+    cat <<'EOF'
+Noctua2 interactive GPU allocations
+
+Usage:
+  qi                         Start the saved interactive allocation in qi.sh
+  qi --help                  Show this help without submitting an allocation
+  qi-gpu <1|2|4>             Request that many A100s on one production node
+  qi-2-gpu                   Shortcut for qi-gpu 2
+  qi-4-gpu                   Shortcut for qi-gpu 4
+  qi-setup --help            Show advanced saved-command configuration options
+
+qi-gpu defaults:
+  partition=gpu, nodes=1, tasks=1, CPUs=2, memory=52gb, walltime=8:00:00
+
+Run qs to inspect compact GPU placement before requesting an allocation.
+Run qs --help to list the user, project, and detailed queue views.
+For reconnectability, start qi or qi-gpu inside tmux on the login node.
+EOF
+}
+
+qi() {
+    if [[ $# -eq 0 ]]; then
+        source "${HPC_TOOLS_PATH}/job_submission/qi.sh"
+        return
+    fi
+
+    if [[ $# -eq 1 ]]; then
+        case "$1" in
+            -h|--help|help)
+                qi-help
+                return
+                ;;
+        esac
+    fi
+
+    echo "Error: qi takes no arguments. Run 'qi --help' for available commands."
+    return 2
+}
+
+# Start a single-node interactive A100 allocation with the requested GPU count.
+# Noctua2 production GPU nodes have four A100s, so larger values cannot be
+# satisfied on one node.
+qi-gpu() {
+    if [[ $# -eq 1 ]]; then
+        case "$1" in
+            -h|--help|help)
+                qi-help
+                return
+                ;;
+        esac
+    fi
+
+    if [[ $# -ne 1 ]]; then
+        echo "Usage: qi-gpu <1|2|4>"
+        return 2
+    fi
+
+    local num_gpus="$1"
+    case "${num_gpus}" in
+        1|2|4) ;;
+        *)
+            echo "Error: Noctua2 A100 nodes have 4 GPUs; choose 1, 2, or 4."
+            return 2
+            ;;
+    esac
+
+    srun --pty \
+        --job-name="DevSession-${num_gpus}GPU" \
+        --partition=gpu \
+        --nodes=1 \
+        --ntasks=1 \
+        --cpus-per-task=2 \
+        --mem=52gb \
+        --gres="gpu:a100:${num_gpus}" \
+        --time=8:00:00 \
+        bash --login
+}
+
+alias qi-2-gpu="qi-gpu 2"
+alias qi-4-gpu="qi-gpu 4"
 alias qs="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/resource_stats/resource_check.py"
 alias submit_job="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/submit_job.py"
 alias cleanup_job_logs="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/cleanup_logs.py"
