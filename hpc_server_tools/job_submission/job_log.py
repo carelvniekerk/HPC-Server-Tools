@@ -23,6 +23,7 @@
 # limitations under the License.
 """Open a log file stream for a job on the HPC cluster."""
 
+import re
 import subprocess
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 from pathlib import Path
@@ -34,6 +35,9 @@ from rich.table import Table
 
 from hpc_server_tools.configuration import USER_NAME
 
+SQUEUE_FIELD_SEPARATOR = "\x1f"
+SCONTROL_FIELD_PATTERN = re.compile(r"(?:^|\s)([A-Za-z][A-Za-z0-9_]*)=")
+
 
 def get_jobs(username: str) -> list[dict[str, str | int]]:
     """Get a list of jobs for a user on the HPC cluster."""
@@ -43,7 +47,7 @@ def get_jobs(username: str) -> list[dict[str, str | int]]:
             "--user",
             username,
             "--noheader",
-            "--format=%i|%.40j|%u|%t",
+            f"--format=%i{SQUEUE_FIELD_SEPARATOR}%.40j{SQUEUE_FIELD_SEPARATOR}%u{SQUEUE_FIELD_SEPARATOR}%t",
         ],
         check=True,
         capture_output=True,
@@ -54,7 +58,7 @@ def get_jobs(username: str) -> list[dict[str, str | int]]:
         if not line.strip():
             continue
         job_id, name, user, status = (
-            field.strip() for field in line.split("|", maxsplit=3)
+            field.strip() for field in line.split(SQUEUE_FIELD_SEPARATOR, maxsplit=3)
         )
         jobs.append(
             {
@@ -68,6 +72,33 @@ def get_jobs(username: str) -> list[dict[str, str | int]]:
     return jobs
 
 
+def get_jobs_or_exit(username: str, *, console: Console) -> list[dict[str, str | int]]:
+    """Query active jobs or report a scheduler-command failure cleanly."""
+    try:
+        return get_jobs(username)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        console.print(
+            f"[bold red]Could not query active Slurm jobs for {username}.[/bold red]"
+        )
+        console.print(
+            "The squeue command may be unavailable or the scheduler may be temporarily unreachable."
+        )
+        raise SystemExit(1) from None
+
+
+def parse_scontrol_metadata(output: str) -> dict[str, str]:
+    """Parse one-line scontrol fields without discarding whitespace in values."""
+    record = output.strip()
+    matches = list(SCONTROL_FIELD_PATTERN.finditer(record))
+    metadata: dict[str, str] = {}
+    for index, match in enumerate(matches):
+        value_end = (
+            matches[index + 1].start() if index + 1 < len(matches) else len(record)
+        )
+        metadata[match.group(1)] = record[match.end() : value_end].strip()
+    return metadata
+
+
 def get_job_log_path(job_id: str, *, output: bool) -> Path | None:
     """Return the log path registered with Slurm, if the job has one."""
     result = subprocess.run(
@@ -77,12 +108,7 @@ def get_job_log_path(job_id: str, *, output: bool) -> Path | None:
         text=True,
     )
     field = "StdOut" if output else "StdErr"
-    metadata = {
-        key: value
-        for token in result.stdout.split()
-        if "=" in token
-        for key, value in [token.split("=", maxsplit=1)]
-    }
+    metadata = parse_scontrol_metadata(result.stdout)
     value = metadata.get(field)
     if not value or value in {"(null)", "/dev/null", "N/A"}:
         return None
@@ -133,7 +159,7 @@ if __name__ == "__main__":
     follow_output = args.output or not args.error
     stream_name = "stdout" if follow_output else "stderr"
 
-    jobs: list[dict[str, str | int]] = get_jobs(USER_NAME)
+    jobs: list[dict[str, str | int]] = get_jobs_or_exit(USER_NAME, console=console)
 
     console.print(
         "[bold]Slurm batch jobs normally expose two live log streams:[/bold]\n"

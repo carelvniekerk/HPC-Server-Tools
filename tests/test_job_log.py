@@ -15,6 +15,9 @@ from hpc_server_tools.job_submission.job_log import (  # noqa: E402
     get_job_log_path,
     get_job_log_path_or_exit,
     get_jobs,
+    get_jobs_or_exit,
+    parse_scontrol_metadata,
+    SQUEUE_FIELD_SEPARATOR,
 )
 
 
@@ -27,8 +30,10 @@ class GetJobsTest(unittest.TestCase):
             args=[],
             returncode=0,
             stdout=(
-                "33641305_200|deepmath-4b-s66750-68750-chunk256|trust03|R\n"
-                "33636517|DevSession|trust03|R\n"
+                f"33641305_200{SQUEUE_FIELD_SEPARATOR}deepmath-4b-s66750-68750-chunk256"
+                f"{SQUEUE_FIELD_SEPARATOR}trust03{SQUEUE_FIELD_SEPARATOR}R\n"
+                f"33636517{SQUEUE_FIELD_SEPARATOR}DevSession{SQUEUE_FIELD_SEPARATOR}trust03"
+                f"{SQUEUE_FIELD_SEPARATOR}R\n"
             ),
         )
 
@@ -42,12 +47,44 @@ class GetJobsTest(unittest.TestCase):
                 "--user",
                 "trust03",
                 "--noheader",
-                "--format=%i|%.40j|%u|%t",
+                f"--format=%i{SQUEUE_FIELD_SEPARATOR}%.40j{SQUEUE_FIELD_SEPARATOR}%u{SQUEUE_FIELD_SEPARATOR}%t",
             ],
             check=True,
             capture_output=True,
             text=True,
         )
+
+    @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
+    def test_preserves_pipe_characters_in_job_names(self, run_mock) -> None:
+        """Do not treat printable job-name characters as field delimiters."""
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout=(
+                f"42{SQUEUE_FIELD_SEPARATOR}train|debug{SQUEUE_FIELD_SEPARATOR}trust03"
+                f"{SQUEUE_FIELD_SEPARATOR}R\n"
+            ),
+        )
+
+        jobs = get_jobs("trust03")
+
+        self.assertEqual(jobs[0]["name"], "train|debug")
+
+    @patch("hpc_server_tools.job_submission.job_log.get_jobs")
+    def test_cli_reports_squeue_failure_without_traceback(self, get_jobs_mock) -> None:
+        """Turn scheduler query failures into an actionable CLI message."""
+        get_jobs_mock.side_effect = subprocess.CalledProcessError(1, ["squeue"])
+        output = StringIO()
+        console = Console(file=output, color_system=None)
+
+        with self.assertRaises(SystemExit) as exit_context:
+            get_jobs_or_exit("trust03", console=console)
+
+        self.assertEqual(exit_context.exception.code, 1)
+        self.assertIn(
+            "Could not query active Slurm jobs for trust03", output.getvalue()
+        )
+        self.assertIn("squeue command may be unavailable", output.getvalue())
 
 
 class GetJobLogPathTest(unittest.TestCase):
@@ -100,6 +137,36 @@ class GetJobLogPathTest(unittest.TestCase):
             get_job_log_path("45", output=False),
             Path("/scratch/project/slurm-45.err"),
         )
+
+    @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
+    def test_preserves_whitespace_in_work_dir_and_log_paths(self, run_mock) -> None:
+        """Resolve field boundaries without splitting path values on spaces."""
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout=(
+                "JobId=47 WorkDir=/scratch/project with spaces "
+                "StdOut=logs/training output.log StdErr=logs/training errors.log NumNodes=1"
+            ),
+        )
+
+        self.assertEqual(
+            get_job_log_path("47", output=True),
+            Path("/scratch/project with spaces/logs/training output.log"),
+        )
+        self.assertEqual(
+            get_job_log_path("47", output=False),
+            Path("/scratch/project with spaces/logs/training errors.log"),
+        )
+
+    def test_metadata_parser_preserves_equals_signs_inside_values(self) -> None:
+        """Only field markers preceded by whitespace delimit metadata values."""
+        metadata = parse_scontrol_metadata(
+            "JobId=48 WorkDir=/scratch/key=value StdOut=job output.log NumNodes=1"
+        )
+
+        self.assertEqual(metadata["WorkDir"], "/scratch/key=value")
+        self.assertEqual(metadata["StdOut"], "job output.log")
 
     @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
     def test_treats_dev_null_as_no_registered_log(self, run_mock) -> None:
