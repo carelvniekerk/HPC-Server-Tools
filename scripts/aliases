@@ -73,7 +73,7 @@ qi() {
         esac
     fi
 
-    echo "Error: qi takes no arguments. Run 'qi --help' for available commands."
+    echo "Error: unsupported qi arguments. Run 'qi --help' for available commands."
     return 2
 }
 
