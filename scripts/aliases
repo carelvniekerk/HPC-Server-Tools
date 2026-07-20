@@ -51,7 +51,8 @@ Usage:
   qi-setup --help            Show advanced saved-command configuration options
 
 qi-gpu defaults:
-  partition=gpu, nodes=1, tasks=1, CPUs=2, memory=52G, walltime=8:00:00
+  partition=gpu, nodes=1, tasks=1, CPUs=2, memory=52G per GPU, walltime=8:00:00
+  resulting memory: 1 GPU=52G, 2 GPUs=104G, 4 GPUs=208G
 
 Run qs to inspect compact GPU placement before requesting an allocation.
 For reconnectability, start qi or qi-gpu inside tmux on the login node.
@@ -79,7 +80,9 @@ qi() {
 
 # Start a single-node interactive A100 allocation with the requested GPU count.
 # Noctua2 production GPU nodes have four A100s, so larger values cannot be
-# satisfied on one node.
+# satisfied on one node. Scale host RAM with the worker count: a four-GPU
+# ZeRO-2 Qwen3-4B smoke exceeded the former fixed 52G request while each rank
+# was still loading model weights, before vLLM or the CUDA-memory test began.
 qi-gpu() {
     if [[ $# -eq 1 ]]; then
         case "$1" in
@@ -104,13 +107,14 @@ qi-gpu() {
             ;;
     esac
 
+    local memory_gib=$((52 * num_gpus))
     srun --pty \
         --job-name="DevSession-${num_gpus}GPU" \
         --partition=gpu \
         --nodes=1 \
         --ntasks=1 \
         --cpus-per-task=2 \
-        --mem=52G \
+        --mem="${memory_gib}G" \
         --gres="gpu:a100:${num_gpus}" \
         --time=8:00:00 \
         bash --login
