@@ -43,7 +43,8 @@ UNAVAILABLE_NODE_STATES: tuple[str, ...] = (
     "DRAIN",
     "FAIL",
     "MAINT",
-    "NO_RESPOND",
+    "NOT_RESPONDING",
+    "UNKNOWN",
 )
 
 
@@ -76,8 +77,12 @@ def get_node_status(node_name: str) -> dict[str, str]:
         else:
             gpus_allocated = resources_info.split("gpu=", 1)[-1].split(",", 1)[0]
 
-        state_info: str = next(line for line in node_info if "State=" in line)
-        state: str = state_info.split("State=", 1)[-1].split(" ", 1)[0]
+        state_info: str = next((line for line in node_info if "State=" in line), "")
+        state: str = (
+            state_info.split("State=", 1)[-1].split(" ", 1)[0]
+            if state_info
+            else "UNKNOWN"
+        )
 
         return {  # noqa: TRY300
             "node_name": node_name,
@@ -182,6 +187,14 @@ def format_gpu_request(tres_per_node: str) -> str:
     )
 
 
+def get_empty_jobs_row(*, project_jobs: bool) -> list[str]:
+    """Build a placeholder row with its message in the job-name column."""
+    row: list[str] = ["-"] * (10 if project_jobs else 9)
+    name_column_index: int = 3 if project_jobs else 2
+    row[name_column_index] = "No active jobs"
+    return row
+
+
 def display_jobs(*, project_jobs: bool = False) -> None:
     """Display user or project jobs, including requested GPUs per node."""
     scheduler_filter: list[str] = (
@@ -241,9 +254,7 @@ def display_jobs(*, project_jobs: bool = False) -> None:
         table.add_row(*row)
 
     if not result.stdout.strip():
-        empty_row: list[str] = ["-"] * (10 if project_jobs else 9)
-        empty_row[2 if project_jobs else 1] = "No active jobs"
-        table.add_row(*empty_row)
+        table.add_row(*get_empty_jobs_row(project_jobs=project_jobs))
     console.print(table)
 
 
