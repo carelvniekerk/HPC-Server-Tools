@@ -51,7 +51,7 @@ Usage:
   qi-setup --help            Show advanced saved-command configuration options
 
 qi-gpu defaults:
-  partition=gpu, nodes=1, tasks=1, CPUs=2, memory=52gb, walltime=8:00:00
+  partition=gpu, nodes=1, tasks=1, CPUs=2, memory=52G, walltime=8:00:00
 
 Run qs to inspect compact GPU placement before requesting an allocation.
 Run qs --help to list the user, project, and detailed queue views.
@@ -111,7 +111,7 @@ qi-gpu() {
         --nodes=1 \
         --ntasks=1 \
         --cpus-per-task=2 \
-        --mem=52gb \
+        --mem=52G \
         --gres="gpu:a100:${num_gpus}" \
         --time=8:00:00 \
         bash --login
