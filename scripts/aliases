@@ -54,7 +54,6 @@ qi-gpu defaults:
   partition=gpu, nodes=1, tasks=1, CPUs=2, memory=52G, walltime=8:00:00
 
 Run qs to inspect compact GPU placement before requesting an allocation.
-Run qs --help to list the user, project, and detailed queue views.
 For reconnectability, start qi or qi-gpu inside tmux on the login node.
 EOF
 }
