@@ -23,17 +23,28 @@
 # limitations under the License.
 """Check the resources available on the HPC cluster."""
 
+import argparse
+import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
+from hpc_server_tools.configuration import COMPUTE_NODE_GROUPS, USER_NAME
 from rich import box
 from rich.columns import Columns
 from rich.console import Console
 from rich.table import Table
 
-from hpc_server_tools.configuration import COMPUTE_NODE_GROUPS, USER_NAME
-
 console: Console = Console()
+
+PROJECT_ACCOUNT: str = "hpc-prf-trust"
+SQUEUE_FORMAT: str = "%i|%u|%P|%j|%t|%M|%D|%C|%b|%R"
+UNAVAILABLE_NODE_STATES: tuple[str, ...] = (
+    "DOWN",
+    "DRAIN",
+    "FAIL",
+    "MAINT",
+    "NO_RESPOND",
+)
 
 
 def get_node_status(node_name: str) -> dict[str, str]:
@@ -65,7 +76,12 @@ def get_node_status(node_name: str) -> dict[str, str]:
         else:
             gpus_allocated = resources_info.split("gpu=", 1)[-1].split(",", 1)[0]
 
+        state_info: str = next(line for line in node_info if "State=" in line)
+        state: str = state_info.split("State=", 1)[-1].split(" ", 1)[0]
+
         return {  # noqa: TRY300
+            "node_name": node_name,
+            "state": state,
             "resources_available.ncpus": cpus_available,
             "resources_available.ngpus": gpus_available,
             "resources_assigned.ncpus": cpus_allocated,
@@ -82,12 +98,18 @@ def get_node_status(node_name: str) -> dict[str, str]:
 def get_resources_available(node_status: dict[str, str]) -> dict[str, float]:
     """Get the resources available on a node in the HPC cluster."""
     resources: dict[str, float] = {"ncpus": 0, "ngpus": 0, "mem": 0}
-    # if "state" not in node_status or node_status["state"] != "free":
-    #     return resources
+    if not is_node_schedulable(node_status):
+        return resources
 
     for resource in resources:
         resources[resource] = get_avail(node_status, resource)
     return resources
+
+
+def is_node_schedulable(node_status: dict[str, str]) -> bool:
+    """Return whether Slurm can place new work on a node."""
+    state: str = node_status.get("state", "UNKNOWN")
+    return not any(flag in state for flag in UNAVAILABLE_NODE_STATES)
 
 
 def get_avail(status: dict[str, str], resource: str) -> float:
@@ -131,10 +153,14 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|_|"""""|_|"""""| {======|_|"""""|_|"""""
     console.print(banner, style="bold blue", justify="left")
 
 
-def aggregate_resources(nodes: list[str]) -> dict[str, float]:
-    """Aggregate resources across a list of nodes."""
+def get_node_statuses(nodes: list[str]) -> list[dict[str, str]]:
+    """Get scheduler status for a list of nodes concurrently."""
     with ThreadPoolExecutor() as executor:
-        status_list: list[dict[str, str]] = list(executor.map(get_node_status, nodes))
+        return list(executor.map(get_node_status, nodes))
+
+
+def aggregate_resources(status_list: list[dict[str, str]]) -> dict[str, float]:
+    """Aggregate resources across node-status records."""
     resources_list: list[dict[str, float]] = [
         get_resources_available(status) for status in status_list
     ]
@@ -143,25 +169,222 @@ def aggregate_resources(nodes: list[str]) -> dict[str, float]:
     return {key: sum(node[key] for node in resources_list) for key in resources_list[0]}
 
 
-def display_resources() -> None:
-    """Display the resources available on the HPC cluster."""
-    # Display the job status
-    console.print(
-        subprocess.run(
-            f"squeue --user {USER_NAME}",
-            capture_output=True,
-            check=True,
-            shell=True,
-            text=True,
-        ).stdout,
-        style="bold blue",
-        justify="left",
+def format_gpu_request(tres_per_node: str) -> str:
+    """Format Slurm's GPU TRES request for the jobs table."""
+    gpu_requests: list[tuple[str, str]] = re.findall(
+        r"gres/gpu(?::([^,:]+))?:(\d+)",
+        tres_per_node,
+    )
+    if not gpu_requests:
+        return "0"
+    return ", ".join(
+        f"{count} {gpu_type}" if gpu_type else count for gpu_type, count in gpu_requests
     )
 
+
+def display_jobs(*, project_jobs: bool = False) -> None:
+    """Display user or project jobs, including requested GPUs per node."""
+    scheduler_filter: list[str] = (
+        ["--account", PROJECT_ACCOUNT] if project_jobs else ["--user", USER_NAME]
+    )
+    result: subprocess.CompletedProcess[str] = subprocess.run(
+        [
+            "squeue",
+            *scheduler_filter,
+            "--noheader",
+            f"--format={SQUEUE_FORMAT}",
+        ],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+
+    table_title: str = (
+        f"Jobs for Slurm account {PROJECT_ACCOUNT}"
+        if project_jobs
+        else f"Jobs for {USER_NAME}"
+    )
+    table: Table = Table(title=table_title, box=box.SIMPLE_HEAVY)
+    table.add_column("Job ID", style="bold")
+    if project_jobs:
+        table.add_column("User")
+    table.add_column("Partition")
+    table.add_column("Name")
+    table.add_column("State", justify="center")
+    table.add_column("Time", justify="right")
+    table.add_column("Nodes", justify="right")
+    table.add_column("CPUs", justify="right")
+    table.add_column("GPUs / node", justify="right")
+    table.add_column("Node / reason")
+
+    for line in result.stdout.splitlines():
+        fields: list[str] = line.split("|", 9)
+        if len(fields) != 10:  # noqa: PLR2004
+            continue
+        job_id, user, partition, name, state, elapsed, nodes, cpus, tres, reason = (
+            fields
+        )
+        state_color: str = "green" if state == "R" else "yellow"
+        row: list[str] = [
+            job_id,
+            partition,
+            name,
+            f"[{state_color}]{state}[/]",
+            elapsed,
+            nodes,
+            cpus,
+            format_gpu_request(tres),
+            reason,
+        ]
+        if project_jobs:
+            row.insert(1, user)
+        table.add_row(*row)
+
+    if not result.stdout.strip():
+        empty_row: list[str] = ["-"] * (10 if project_jobs else 9)
+        empty_row[2 if project_jobs else 1] = "No active jobs"
+        table.add_row(*empty_row)
+    console.print(table)
+
+
+def compress_node_names(node_names: list[str]) -> str:
+    """Compress consecutively numbered nodes into a Slurm-style host list."""
+    parsed_names: list[tuple[str, str]] = []
+    for node_name in sorted(node_names):
+        match: re.Match[str] | None = re.fullmatch(r"(.*?)(\d+)", node_name)
+        if match is None:
+            return ", ".join(sorted(node_names))
+        parsed_names.append((match.group(1), match.group(2)))
+
+    prefixes: set[str] = {prefix for prefix, _ in parsed_names}
+    widths: set[int] = {len(number) for _, number in parsed_names}
+    if len(prefixes) != 1 or len(widths) != 1:
+        return ", ".join(sorted(node_names))
+    if len(parsed_names) == 1:
+        return node_names[0]
+
+    prefix: str = parsed_names[0][0]
+    width: int = len(parsed_names[0][1])
+    numbers: list[int] = sorted(int(number) for _, number in parsed_names)
+    ranges: list[tuple[int, int]] = []
+    range_start: int = numbers[0]
+    range_end: int = numbers[0]
+    for number in numbers[1:]:
+        if number == range_end + 1:
+            range_end = number
+            continue
+        ranges.append((range_start, range_end))
+        range_start = range_end = number
+    ranges.append((range_start, range_end))
+
+    parts: list[str] = [
+        f"{start:0{width}d}-{end:0{width}d}" if start != end else f"{start:0{width}d}"
+        for start, end in ranges
+    ]
+    return f"{prefix}[{','.join(parts)}]"
+
+
+def display_gpu_node_summary(
+    group_name: str,
+    status_list: list[dict[str, str]],
+) -> None:
+    """Summarize nodes grouped by scheduler state and free GPUs per node."""
+    gpu_statuses: list[dict[str, str]] = [
+        status
+        for status in status_list
+        if int(status.get("resources_available.ngpus", "0")) > 0
+    ]
+    if not gpu_statuses:
+        return
+
+    grouped_nodes: dict[tuple[str, int, int], list[str]] = {}
+    for status in gpu_statuses:
+        total: int = int(status["resources_available.ngpus"])
+        allocated: int = int(status["resources_assigned.ngpus"])
+        free: int = max(total - allocated, 0) if is_node_schedulable(status) else 0
+        state: str = status.get("state", "UNKNOWN")
+        grouped_nodes.setdefault((state, free, total), []).append(status["node_name"])
+
+    table: Table = Table(title=f"{group_name} GPU placement", box=box.SIMPLE_HEAVY)
+    table.add_column("Free GPUs / node", justify="right", style="bold")
+    table.add_column("State")
+    table.add_column("Count", justify="right")
+    table.add_column("Total free GPUs", justify="right", style="bold")
+    table.add_column("Nodes")
+
+    sorted_groups: list[tuple[tuple[str, int, int], list[str]]] = sorted(
+        grouped_nodes.items(),
+        key=lambda item: (-item[0][1], item[0][0], item[0][2]),
+    )
+    for (state, free, total), node_names in sorted_groups:
+        free_color: str = "green" if free == total else "yellow" if free else "red"
+        state_color: str = (
+            "red" if any(flag in state for flag in UNAVAILABLE_NODE_STATES) else "green"
+        )
+        table.add_row(
+            f"[{free_color}]{free} / {total}[/]",
+            f"[{state_color}]{state}[/]",
+            str(len(node_names)),
+            f"{len(node_names)} × {free} = {len(node_names) * free}",
+            compress_node_names(node_names),
+        )
+
+    console.print(table)
+
+
+def display_gpu_nodes_detailed(
+    group_name: str,
+    status_list: list[dict[str, str]],
+) -> None:
+    """Display one row per GPU node for detailed placement inspection."""
+    gpu_statuses: list[dict[str, str]] = [
+        status
+        for status in status_list
+        if int(status.get("resources_available.ngpus", "0")) > 0
+    ]
+    if not gpu_statuses:
+        return
+
+    table: Table = Table(title=f"{group_name} GPUs by node", box=box.SIMPLE_HEAVY)
+    table.add_column("Node", style="bold")
+    table.add_column("State")
+    table.add_column("Free", justify="right")
+    table.add_column("Allocated", justify="right")
+    table.add_column("Total", justify="right")
+
+    for status in sorted(gpu_statuses, key=lambda item: item["node_name"]):
+        total: int = int(status["resources_available.ngpus"])
+        allocated: int = int(status["resources_assigned.ngpus"])
+        free: int = max(total - allocated, 0) if is_node_schedulable(status) else 0
+        free_color: str = "green" if free == total else "yellow" if free else "red"
+        state: str = status.get("state", "UNKNOWN")
+        state_color: str = "red" if not is_node_schedulable(status) else "green"
+        table.add_row(
+            status["node_name"],
+            f"[{state_color}]{state}[/]",
+            f"[{free_color}]{free}[/]",
+            str(allocated),
+            str(total),
+        )
+
+    console.print(table)
+
+
+def display_resources(
+    *,
+    detailed_gpu_nodes: bool = False,
+    project_jobs: bool = False,
+) -> None:
+    """Display the resources available on the HPC cluster."""
+    display_jobs(project_jobs=project_jobs)
+
     tables: list[Table] = []
+    group_statuses: dict[str, list[dict[str, str]]] = {}
 
     for group_name, nodes in COMPUTE_NODE_GROUPS.items():
-        resources: dict[str, float] = aggregate_resources(nodes)
+        status_list: list[dict[str, str]] = get_node_statuses(nodes)
+        group_statuses[group_name] = status_list
+        resources: dict[str, float] = aggregate_resources(status_list)
         table: Table = Table(
             title=f"{group_name} Resources",
             box=box.SIMPLE_HEAVY,
@@ -185,7 +408,30 @@ def display_resources() -> None:
     for i in range(0, len(tables), 4):
         console.print(Columns(tables[i : i + 4]))
 
+    for group_name, status_list in group_statuses.items():
+        if detailed_gpu_nodes:
+            display_gpu_nodes_detailed(group_name, status_list)
+        else:
+            display_gpu_node_summary(group_name, status_list)
+
 
 if __name__ == "__main__":
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description="Show jobs and schedulable cluster resources.",
+    )
+    parser.add_argument(
+        "--detailed",
+        action="store_true",
+        help="show one row per GPU node instead of the compact placement summary",
+    )
+    parser.add_argument(
+        "--project-jobs",
+        action="store_true",
+        help=f"show all jobs charged to the {PROJECT_ACCOUNT} Slurm account",
+    )
+    args: argparse.Namespace = parser.parse_args()
     print_hpc_banner()
-    display_resources()
+    display_resources(
+        detailed_gpu_nodes=args.detailed,
+        project_jobs=args.project_jobs,
+    )
