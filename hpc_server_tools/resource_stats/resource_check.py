@@ -37,7 +37,10 @@ from rich.table import Table
 console: Console = Console()
 
 PROJECT_ACCOUNT: str = "hpc-prf-trust"
-SQUEUE_FORMAT: str = "%i|%u|%P|%j|%t|%M|%D|%C|%b|%R"
+SQUEUE_FIELD_SEPARATOR: str = "\x1f"
+SQUEUE_FORMAT: str = SQUEUE_FIELD_SEPARATOR.join(
+    ("%i", "%u", "%P", "%j", "%t", "%M", "%D", "%C", "%b", "%R")
+)
 SCHEDULABLE_NODE_STATES: frozenset[str] = frozenset({"IDLE", "MIXED"})
 
 
@@ -199,6 +202,12 @@ def get_empty_jobs_row(*, project_jobs: bool) -> list[str]:
     return row
 
 
+def parse_squeue_job_fields(line: str) -> list[str]:
+    """Split one encoded squeue record without colliding with printable job names."""
+    fields: list[str] = line.split(SQUEUE_FIELD_SEPARATOR, 9)
+    return fields if len(fields) == 10 else []  # noqa: PLR2004
+
+
 def display_jobs(*, project_jobs: bool = False) -> None:
     """Display user or project jobs, including requested GPUs per node."""
     scheduler_filter: list[str] = (
@@ -235,8 +244,8 @@ def display_jobs(*, project_jobs: bool = False) -> None:
     table.add_column("Node / reason")
 
     for line in result.stdout.splitlines():
-        fields: list[str] = line.split("|", 9)
-        if len(fields) != 10:  # noqa: PLR2004
+        fields: list[str] = parse_squeue_job_fields(line)
+        if not fields:
             continue
         job_id, user, partition, name, state, elapsed, nodes, cpus, tres, reason = (
             fields

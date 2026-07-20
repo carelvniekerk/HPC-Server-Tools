@@ -12,6 +12,8 @@ from hpc_server_tools.resource_stats.resource_check import (  # noqa: E402
     get_empty_jobs_row,
     get_node_status,
     is_node_schedulable,
+    parse_squeue_job_fields,
+    SQUEUE_FIELD_SEPARATOR,
 )
 
 
@@ -61,6 +63,30 @@ class ResourceCheckTests(unittest.TestCase):
             format_gpu_request("gpu:a100:2,gpu:h100:1"),
             "2 a100, 1 h100",
         )
+
+    def test_preserves_pipe_characters_in_job_names(self) -> None:
+        """Do not shift scheduler fields when a printable pipe occurs in a name."""
+        separator = SQUEUE_FIELD_SEPARATOR
+        fields = parse_squeue_job_fields(
+            separator.join(
+                (
+                    "42",
+                    "trust03",
+                    "gpu",
+                    "train|seed1",
+                    "R",
+                    "1:00",
+                    "1",
+                    "2",
+                    "gpu:a100:4",
+                    "n2gpu1208",
+                )
+            )
+        )
+
+        self.assertEqual(fields[3], "train|seed1")
+        self.assertEqual(fields[4], "R")
+        self.assertEqual(fields[8], "gpu:a100:4")
 
     @patch("hpc_server_tools.resource_stats.resource_check.subprocess.run")
     def test_missing_node_state_falls_back_to_unschedulable_unknown(
