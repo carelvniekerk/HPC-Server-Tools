@@ -98,6 +98,11 @@ def get_node_status(node_name: str) -> dict[str, str]:
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error getting status for node {node_name}: {e}[/red]")
         return {}
+    except (StopIteration, ValueError) as e:
+        console.print(
+            f"[red]Could not parse scheduler status for node {node_name}: {e}[/red]"
+        )
+        return {}
 
 
 def get_resources_available(node_status: dict[str, str]) -> dict[str, float]:
@@ -174,12 +179,16 @@ def aggregate_resources(status_list: list[dict[str, str]]) -> dict[str, float]:
     return {key: sum(node[key] for node in resources_list) for key in resources_list[0]}
 
 
-def format_gpu_request(tres_per_node: str) -> str:
-    """Format Slurm's GPU TRES request for the jobs table."""
-    gpu_requests: list[tuple[str, str]] = re.findall(
-        r"gres/gpu(?::([^,:]+))?:(\d+)",
-        tres_per_node,
-    )
+def format_gpu_request(gres_or_tres: str) -> str:
+    """Format GPU counts from Slurm GRES or TRES syntax."""
+    gpu_requests: list[tuple[str, str]] = []
+    for item in gres_or_tres.split(","):
+        match = re.fullmatch(
+            r"(?:gres/)?gpu(?::([^,:=]+))?[:=](\d+)(?:\([^)]*\))?",
+            item.strip(),
+        )
+        if match is not None:
+            gpu_requests.append((match.group(1) or "", match.group(2)))
     if not gpu_requests:
         return "0"
     return ", ".join(

@@ -8,6 +8,7 @@ from unittest.mock import patch
 os.environ.setdefault("USER_NAME", "test-user")
 
 from hpc_server_tools.resource_stats.resource_check import (  # noqa: E402
+    format_gpu_request,
     get_empty_jobs_row,
     get_node_status,
     is_node_schedulable,
@@ -35,6 +36,25 @@ class ResourceCheckTests(unittest.TestCase):
         """Match the complete state flag emitted by Slurm."""
         self.assertFalse(is_node_schedulable({"state": "IDLE+NOT_RESPONDING"}))
 
+    def test_formats_squeue_gres_gpu_requests(self) -> None:
+        """Parse the GRES syntax emitted by the squeue percent-b field."""
+        self.assertEqual(format_gpu_request("gpu:4"), "4")
+        self.assertEqual(format_gpu_request("gpu:a100:4"), "4 a100")
+
+    def test_formats_tres_gpu_requests(self) -> None:
+        """Also accept colon and equals forms used by Slurm TRES fields."""
+        self.assertEqual(format_gpu_request("gres/gpu:4"), "4")
+        self.assertEqual(format_gpu_request("gres/gpu=4"), "4")
+        self.assertEqual(format_gpu_request("gres/gpu:a100:4"), "4 a100")
+        self.assertEqual(format_gpu_request("gres/gpu:a100=4"), "4 a100")
+
+    def test_formats_multiple_gpu_resource_types(self) -> None:
+        """Retain each typed GPU request in mixed resource lists."""
+        self.assertEqual(
+            format_gpu_request("gpu:a100:2,gpu:h100:1"),
+            "2 a100, 1 h100",
+        )
+
     @patch("hpc_server_tools.resource_stats.resource_check.subprocess.run")
     def test_missing_node_state_falls_back_to_unschedulable_unknown(
         self, run_mock
@@ -55,6 +75,17 @@ class ResourceCheckTests(unittest.TestCase):
 
         self.assertEqual(status["state"], "UNKNOWN")
         self.assertFalse(is_node_schedulable(status))
+
+    @patch("hpc_server_tools.resource_stats.resource_check.subprocess.run")
+    def test_truncated_node_status_returns_empty_record(self, run_mock) -> None:
+        """Fail closed when a required scontrol field is unavailable."""
+        run_mock.return_value = subprocess.CompletedProcess(
+            args=["scontrol", "show", "node", "n2gpu1201"],
+            returncode=0,
+            stdout=b"NodeName=n2gpu1201 State=IDLE\n",
+        )
+
+        self.assertEqual(get_node_status("n2gpu1201"), {})
 
 
 if __name__ == "__main__":
