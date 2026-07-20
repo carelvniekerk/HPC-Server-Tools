@@ -38,14 +38,7 @@ console: Console = Console()
 
 PROJECT_ACCOUNT: str = "hpc-prf-trust"
 SQUEUE_FORMAT: str = "%i|%u|%P|%j|%t|%M|%D|%C|%b|%R"
-UNAVAILABLE_NODE_STATES: tuple[str, ...] = (
-    "DOWN",
-    "DRAIN",
-    "FAIL",
-    "MAINT",
-    "NOT_RESPONDING",
-    "UNKNOWN",
-)
+SCHEDULABLE_NODE_STATES: frozenset[str] = frozenset({"IDLE", "MIXED"})
 
 
 def get_node_status(node_name: str) -> dict[str, str]:
@@ -119,7 +112,9 @@ def get_resources_available(node_status: dict[str, str]) -> dict[str, float]:
 def is_node_schedulable(node_status: dict[str, str]) -> bool:
     """Return whether Slurm can place new work on a node."""
     state: str = node_status.get("state", "UNKNOWN")
-    return not any(flag in state for flag in UNAVAILABLE_NODE_STATES)
+    # Fail closed: compound flags such as IDLE+DRAIN and IDLE+INVALID_REG can
+    # make an otherwise usable base state unavailable to new work.
+    return state in SCHEDULABLE_NODE_STATES
 
 
 def get_avail(status: dict[str, str], resource: str) -> float:
@@ -338,9 +333,7 @@ def display_gpu_node_summary(
     )
     for (state, free, total), node_names in sorted_groups:
         free_color: str = "green" if free == total else "yellow" if free else "red"
-        state_color: str = (
-            "red" if any(flag in state for flag in UNAVAILABLE_NODE_STATES) else "green"
-        )
+        state_color: str = "green" if state in SCHEDULABLE_NODE_STATES else "red"
         table.add_row(
             f"[{free_color}]{free} / {total}[/]",
             f"[{state_color}]{state}[/]",

@@ -36,6 +36,13 @@ class ResourceCheckTests(unittest.TestCase):
         """Match the complete state flag emitted by Slurm."""
         self.assertFalse(is_node_schedulable({"state": "IDLE+NOT_RESPONDING"}))
 
+    def test_only_plain_idle_and_mixed_states_are_schedulable(self) -> None:
+        """Fail closed for unavailable base states and compound flags."""
+        self.assertTrue(is_node_schedulable({"state": "IDLE"}))
+        self.assertTrue(is_node_schedulable({"state": "MIXED"}))
+        self.assertFalse(is_node_schedulable({"state": "FUTURE"}))
+        self.assertFalse(is_node_schedulable({"state": "IDLE+INVALID_REG"}))
+
     def test_formats_squeue_gres_gpu_requests(self) -> None:
         """Parse the GRES syntax emitted by the squeue percent-b field."""
         self.assertEqual(format_gpu_request("gpu:4"), "4")
