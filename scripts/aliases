@@ -108,6 +108,10 @@ qi-gpu() {
     esac
 
     local memory_gib=$((52 * num_gpus))
+    echo "Requesting Noctua2 interactive allocation:"
+    echo "  job=DevSession-${num_gpus}GPU partition=gpu nodes=1 tasks=1"
+    echo "  GPUs=${num_gpus} x A100 CPUs=2 RAM=${memory_gib}G walltime=8:00:00"
+    echo "  shell=bash --login (exit the shell to release the allocation)"
     srun --pty \
         --job-name="DevSession-${num_gpus}GPU" \
         --partition=gpu \

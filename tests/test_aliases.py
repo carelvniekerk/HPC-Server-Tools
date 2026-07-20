@@ -41,6 +41,11 @@ qi-gpu "$1"
                 self.assertIn(f"--mem={memory_gib}G", arguments)
                 self.assertIn(f"--gres=gpu:a100:{gpu_count}", arguments)
                 self.assertIn("--nodes=1", arguments)
+                self.assertIn("Requesting Noctua2 interactive allocation:", arguments)
+                self.assertIn(
+                    f"  GPUs={gpu_count} x A100 CPUs=2 RAM={memory_gib}G walltime=8:00:00",
+                    arguments,
+                )
 
 
 if __name__ == "__main__":
