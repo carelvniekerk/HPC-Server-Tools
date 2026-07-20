@@ -181,6 +181,18 @@ class GetJobLogPathTest(unittest.TestCase):
         self.assertEqual(metadata["WorkDir"], "/scratch/key=value")
         self.assertEqual(metadata["StdOut"], "job output.log")
 
+    def test_metadata_parser_preserves_lowercase_field_like_path_fragments(
+        self,
+    ) -> None:
+        """Do not interpret lowercase name=value fragments as Slurm fields."""
+        metadata = parse_scontrol_metadata(
+            "JobId=49 WorkDir=/scratch/project "
+            "StdOut=logs/training run=id.log StdErr=logs/error.log NumNodes=1"
+        )
+
+        self.assertEqual(metadata["StdOut"], "logs/training run=id.log")
+        self.assertEqual(metadata["StdErr"], "logs/error.log")
+
     @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
     def test_treats_dev_null_as_no_registered_log(self, run_mock) -> None:
         run_mock.return_value = subprocess.CompletedProcess(

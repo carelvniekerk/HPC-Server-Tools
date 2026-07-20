@@ -36,7 +36,9 @@ from rich.table import Table
 from hpc_server_tools.configuration import USER_NAME
 
 SQUEUE_FIELD_SEPARATOR = "\x1f"
-SCONTROL_FIELD_PATTERN = re.compile(r"(?:^|\s)([A-Za-z][A-Za-z0-9_]*)=")
+# Slurm metadata keys start with an uppercase letter. Restricting boundaries to
+# that grammar preserves lowercase name=value fragments inside paths.
+SCONTROL_FIELD_PATTERN = re.compile(r"(?:^|\s)([A-Z][A-Za-z0-9_]*)=")
 
 
 def get_jobs(username: str) -> list[dict[str, str | int]]:
