@@ -39,7 +39,20 @@ console: Console = Console()
 PROJECT_ACCOUNT: str = "hpc-prf-trust"
 SQUEUE_FIELD_SEPARATOR: str = "\x1f"
 SQUEUE_FORMAT: str = SQUEUE_FIELD_SEPARATOR.join(
-    ("%i", "%u", "%P", "%j", "%t", "%M", "%D", "%C", "%m", "%b", "%R")
+    (
+        "%i",
+        "%u",
+        "%P",
+        "%j",
+        "%t",
+        "%M",
+        "%l",
+        "%D",
+        "%C",
+        "%m",
+        "%b",
+        "%R",
+    )
 )
 SCHEDULABLE_NODE_STATES: frozenset[str] = frozenset({"IDLE", "MIXED"})
 
@@ -211,7 +224,7 @@ def format_gpu_request(gres_or_tres: str) -> str:
 
 def get_empty_jobs_row(*, project_jobs: bool) -> list[str]:
     """Build a placeholder row with its message in the job-name column."""
-    row: list[str] = ["-"] * (11 if project_jobs else 10)
+    row: list[str] = ["-"] * (12 if project_jobs else 11)
     name_column_index: int = 3 if project_jobs else 2
     row[name_column_index] = "No active jobs"
     return row
@@ -219,8 +232,8 @@ def get_empty_jobs_row(*, project_jobs: bool) -> list[str]:
 
 def parse_squeue_job_fields(line: str) -> list[str]:
     """Split one encoded squeue record without colliding with printable job names."""
-    fields: list[str] = line.split(SQUEUE_FIELD_SEPARATOR, 10)
-    return fields if len(fields) == 11 else []  # noqa: PLR2004
+    fields: list[str] = line.split(SQUEUE_FIELD_SEPARATOR, 11)
+    return fields if len(fields) == 12 else []  # noqa: PLR2004
 
 
 def display_jobs(*, project_jobs: bool = False) -> None:
@@ -252,7 +265,8 @@ def display_jobs(*, project_jobs: bool = False) -> None:
     table.add_column("Partition")
     table.add_column("Name")
     table.add_column("State", justify="center")
-    table.add_column("Time", justify="right")
+    table.add_column("Elapsed", justify="right")
+    table.add_column("Time limit", justify="right")
     table.add_column("Nodes", justify="right")
     table.add_column("CPUs", justify="right")
     table.add_column("RAM / node", justify="right")
@@ -270,6 +284,7 @@ def display_jobs(*, project_jobs: bool = False) -> None:
             name,
             state,
             elapsed,
+            time_limit,
             nodes,
             cpus,
             memory,
@@ -283,6 +298,7 @@ def display_jobs(*, project_jobs: bool = False) -> None:
             name,
             f"[{state_color}]{state}[/]",
             elapsed,
+            time_limit,
             nodes,
             cpus,
             memory,

@@ -97,6 +97,7 @@ class ResourceCheckTests(unittest.TestCase):
                     "train|seed1",
                     "R",
                     "1:00",
+                    "2-00:00:00",
                     "1",
                     "2",
                     "52G",
@@ -108,8 +109,10 @@ class ResourceCheckTests(unittest.TestCase):
 
         self.assertEqual(fields[3], "train|seed1")
         self.assertEqual(fields[4], "R")
-        self.assertEqual(fields[8], "52G")
-        self.assertEqual(fields[9], "gpu:a100:4")
+        self.assertEqual(fields[5], "1:00")
+        self.assertEqual(fields[6], "2-00:00:00")
+        self.assertEqual(fields[9], "52G")
+        self.assertEqual(fields[10], "gpu:a100:4")
 
     @patch("hpc_server_tools.resource_stats.resource_check.subprocess.run")
     def test_missing_node_state_falls_back_to_unschedulable_unknown(
