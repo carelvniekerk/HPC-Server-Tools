@@ -321,6 +321,12 @@ class ResourceCheckTests(unittest.TestCase):
         command = run_mock.call_args.args[0]
         self.assertIn("--allocations", command)
         self.assertIn("now-1days", command)
+        format_argument = next(
+            argument for argument in command if argument.startswith("--format=")
+        )
+        self.assertIn("JobName%256", format_argument)
+        self.assertIn("AllocTRES%1024", format_argument)
+        self.assertIn("NodeList%1024", format_argument)
 
     def test_preserves_pipe_characters_in_job_names(self) -> None:
         """Do not shift scheduler fields when a printable pipe occurs in a name."""

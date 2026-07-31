@@ -59,15 +59,15 @@ SACCT_FIELD_SEPARATOR: str = "\x1f"
 SACCT_FIELDS: tuple[str, ...] = (
     "JobIDRaw",
     "Partition",
-    "JobName",
+    "JobName%256",
     "State",
     "End",
     "Elapsed",
     "Timelimit",
     "NNodes",
     "NCPUS",
-    "AllocTRES",
-    "NodeList",
+    "AllocTRES%1024",
+    "NodeList%1024",
     "ExitCode",
 )
 SCHEDULABLE_NODE_STATES: frozenset[str] = frozenset({"IDLE", "MIXED"})
