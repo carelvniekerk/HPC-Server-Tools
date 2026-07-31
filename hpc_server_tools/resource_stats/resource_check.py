@@ -249,6 +249,15 @@ def format_allocated_memory(alloc_tres: str) -> str:
     return match.group(1) if match is not None else "-"
 
 
+def format_memory_request(memory: str) -> str:
+    """Expose whether squeue's minimum memory request is per CPU or per node."""
+    if memory.endswith("c"):
+        return f"{memory[:-1]} / CPU"
+    if memory.endswith("n"):
+        return f"{memory[:-1]} / node"
+    return f"{memory} / node"
+
+
 def format_day_count(days: int) -> str:
     """Format a positive day count for user-facing table titles."""
     return f"{days} {'day' if days == 1 else 'days'}"
@@ -334,7 +343,7 @@ def display_jobs(*, project_jobs: bool = False, user_name: str = USER_NAME) -> N
     table.add_column("Time limit", justify="right")
     table.add_column("Nodes", justify="right")
     table.add_column("CPUs", justify="right")
-    table.add_column("RAM / node", justify="right")
+    table.add_column("RAM request", justify="right")
     table.add_column("GPUs / node", justify="right")
     table.add_column("Node / reason")
 
@@ -367,7 +376,7 @@ def display_jobs(*, project_jobs: bool = False, user_name: str = USER_NAME) -> N
             time_limit,
             nodes,
             cpus,
-            memory,
+            format_memory_request(memory),
             format_gpu_request(tres),
             Text(reason),
         ]

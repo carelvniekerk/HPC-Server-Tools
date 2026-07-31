@@ -21,6 +21,7 @@ from hpc_server_tools.resource_stats.resource_check import (  # noqa: E402
     format_allocated_memory,
     format_day_count,
     format_gpu_request,
+    format_memory_request,
     get_empty_jobs_row,
     get_node_status,
     get_schedulable_memory_gib,
@@ -213,6 +214,12 @@ class ResourceCheckTests(unittest.TestCase):
             "208G",
         )
         self.assertEqual(format_allocated_memory("cpu=16"), "-")
+
+    def test_formats_current_memory_request_scope(self) -> None:
+        """Do not label per-CPU memory as if it were a per-node total."""
+        self.assertEqual(format_memory_request("4Gc"), "4G / CPU")
+        self.assertEqual(format_memory_request("208Gn"), "208G / node")
+        self.assertEqual(format_memory_request("208G"), "208G / node")
 
     def test_formats_singular_and_plural_day_counts(self) -> None:
         """Keep recent-allocation titles grammatical."""
