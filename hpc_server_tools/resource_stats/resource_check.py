@@ -33,6 +33,7 @@ from rich import box
 from rich.columns import Columns
 from rich.console import Console
 from rich.table import Table
+from rich.text import Text
 
 console: Console = Console()
 
@@ -53,6 +54,21 @@ SQUEUE_FORMAT: str = SQUEUE_FIELD_SEPARATOR.join(
         "%b",
         "%R",
     )
+)
+SACCT_FIELD_SEPARATOR: str = "\x1f"
+SACCT_FIELDS: tuple[str, ...] = (
+    "JobIDRaw",
+    "Partition",
+    "JobName",
+    "State",
+    "End",
+    "Elapsed",
+    "Timelimit",
+    "NNodes",
+    "NCPUS",
+    "AllocTRES",
+    "NodeList",
+    "ExitCode",
 )
 SCHEDULABLE_NODE_STATES: frozenset[str] = frozenset({"IDLE", "MIXED"})
 
@@ -217,9 +233,58 @@ def format_gpu_request(gres_or_tres: str) -> str:
             gpu_requests.append((match.group(1) or "", match.group(2)))
     if not gpu_requests:
         return "0"
+    typed_gpu_requests: list[tuple[str, str]] = [
+        request for request in gpu_requests if request[0]
+    ]
+    if typed_gpu_requests:
+        gpu_requests = typed_gpu_requests
     return ", ".join(
         f"{count} {gpu_type}" if gpu_type else count for gpu_type, count in gpu_requests
     )
+
+
+def format_allocated_memory(alloc_tres: str) -> str:
+    """Return total allocated memory from a Slurm AllocTRES value."""
+    match: re.Match[str] | None = re.search(r"(?:^|,)mem=([^,]+)", alloc_tres)
+    return match.group(1) if match is not None else "-"
+
+
+def format_day_count(days: int) -> str:
+    """Format a positive day count for user-facing table titles."""
+    return f"{days} {'day' if days == 1 else 'days'}"
+
+
+def parse_private_data_categories(config_output: str) -> frozenset[str]:
+    """Parse Slurm's configured PrivateData categories."""
+    match: re.Match[str] | None = re.search(
+        r"^PrivateData\s*=\s*(.*)$",
+        config_output,
+        flags=re.MULTILINE,
+    )
+    if match is None:
+        return frozenset()
+    return frozenset(
+        category.strip().lower()
+        for category in match.group(1).split(",")
+        if category.strip() and category.strip().lower() != "none"
+    )
+
+
+def get_private_data_categories() -> frozenset[str]:
+    """Read the live Slurm privacy configuration."""
+    result: subprocess.CompletedProcess[str] = subprocess.run(
+        ["scontrol", "show", "config"],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+    return parse_private_data_categories(result.stdout)
+
+
+def parse_sacct_job_fields(line: str) -> list[str]:
+    """Split one encoded sacct allocation record."""
+    fields: list[str] = line.split(SACCT_FIELD_SEPARATOR, len(SACCT_FIELDS) - 1)
+    return fields if len(fields) == len(SACCT_FIELDS) else []
 
 
 def get_empty_jobs_row(*, project_jobs: bool) -> list[str]:
@@ -236,10 +301,10 @@ def parse_squeue_job_fields(line: str) -> list[str]:
     return fields if len(fields) == 12 else []  # noqa: PLR2004
 
 
-def display_jobs(*, project_jobs: bool = False) -> None:
+def display_jobs(*, project_jobs: bool = False, user_name: str = USER_NAME) -> None:
     """Display user or project jobs, including requested RAM and GPUs per node."""
     scheduler_filter: list[str] = (
-        ["--account", PROJECT_ACCOUNT] if project_jobs else ["--user", USER_NAME]
+        ["--account", PROJECT_ACCOUNT] if project_jobs else ["--user", user_name]
     )
     result: subprocess.CompletedProcess[str] = subprocess.run(
         [
@@ -256,7 +321,7 @@ def display_jobs(*, project_jobs: bool = False) -> None:
     table_title: str = (
         f"Jobs for Slurm account {PROJECT_ACCOUNT}"
         if project_jobs
-        else f"Jobs for {USER_NAME}"
+        else f"Jobs for {user_name}"
     )
     table: Table = Table(title=table_title, box=box.SIMPLE_HEAVY)
     table.add_column("Job ID", style="bold")
@@ -273,6 +338,7 @@ def display_jobs(*, project_jobs: bool = False) -> None:
     table.add_column("GPUs / node", justify="right")
     table.add_column("Node / reason")
 
+    job_count: int = 0
     for line in result.stdout.splitlines():
         fields: list[str] = parse_squeue_job_fields(line)
         if not fields:
@@ -292,10 +358,10 @@ def display_jobs(*, project_jobs: bool = False) -> None:
             reason,
         ) = fields
         state_color: str = "green" if state == "R" else "yellow"
-        row: list[str] = [
+        row: list[str | Text] = [
             job_id,
             partition,
-            name,
+            Text(name),
             f"[{state_color}]{state}[/]",
             elapsed,
             time_limit,
@@ -303,14 +369,115 @@ def display_jobs(*, project_jobs: bool = False) -> None:
             cpus,
             memory,
             format_gpu_request(tres),
-            reason,
+            Text(reason),
         ]
         if project_jobs:
             row.insert(1, user)
         table.add_row(*row)
+        job_count += 1
 
-    if not result.stdout.strip():
+    if job_count == 0:
         table.add_row(*get_empty_jobs_row(project_jobs=project_jobs))
+    console.print(table)
+
+
+def display_recent_jobs(*, user_name: str, recent_days: int) -> None:
+    """Display recently ended allocation records and their allocated hardware."""
+    result: subprocess.CompletedProcess[str] = subprocess.run(
+        [
+            "sacct",
+            "--allocations",
+            "--starttime",
+            f"now-{recent_days}days",
+            "--user",
+            user_name,
+            "--noheader",
+            "--parsable2",
+            f"--delimiter={SACCT_FIELD_SEPARATOR}",
+            f"--format={','.join(SACCT_FIELDS)}",
+        ],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+
+    table: Table = Table(
+        title=(
+            f"Ended allocations for {user_name} in the past "
+            f"{format_day_count(recent_days)}"
+        ),
+        box=box.SIMPLE_HEAVY,
+    )
+    table.add_column("Job ID", style="bold")
+    table.add_column("Partition")
+    table.add_column("Name")
+    table.add_column("State", justify="center")
+    table.add_column("Ended")
+    table.add_column("Elapsed", justify="right")
+    table.add_column("Time limit", justify="right")
+    table.add_column("Nodes", justify="right")
+    table.add_column("CPUs", justify="right")
+    table.add_column("Alloc RAM", justify="right")
+    table.add_column("Alloc GPUs", justify="right")
+    table.add_column("Node list")
+    table.add_column("Exit")
+
+    ended_job_count: int = 0
+    for line in result.stdout.splitlines():
+        fields: list[str] = parse_sacct_job_fields(line)
+        if not fields:
+            continue
+        (
+            job_id,
+            partition,
+            name,
+            state,
+            end,
+            elapsed,
+            time_limit,
+            nodes,
+            cpus,
+            alloc_tres,
+            node_list,
+            exit_code,
+        ) = fields
+        if not end or end in {"Unknown", "N/A", "None"}:
+            continue
+        state_name: str = state.split(" ", 1)[0]
+        state_color: str = "green" if state_name == "COMPLETED" else "red"
+        table.add_row(
+            job_id,
+            partition,
+            Text(name),
+            f"[{state_color}]{state}[/]",
+            end,
+            elapsed,
+            time_limit,
+            nodes,
+            cpus,
+            format_allocated_memory(alloc_tres),
+            format_gpu_request(alloc_tres),
+            Text(node_list),
+            exit_code,
+        )
+        ended_job_count += 1
+
+    if ended_job_count == 0:
+        table.add_row(
+            "-",
+            "-",
+            "No ended allocations visible",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+        )
     console.print(table)
 
 
@@ -404,7 +571,7 @@ def display_gpu_node_summary(
             str(len(node_names)),
             f"{len(node_names)} × {free} = {len(node_names) * free}",
             memory_range,
-            compress_node_names(node_names),
+            Text(compress_node_names(node_names)),
         )
 
     console.print(table)
@@ -454,9 +621,13 @@ def display_resources(
     *,
     detailed_gpu_nodes: bool = False,
     project_jobs: bool = False,
+    user_name: str = USER_NAME,
+    recent_days: int | None = None,
 ) -> None:
     """Display the resources available on the HPC cluster."""
-    display_jobs(project_jobs=project_jobs)
+    display_jobs(project_jobs=project_jobs, user_name=user_name)
+    if recent_days is not None:
+        display_recent_jobs(user_name=user_name, recent_days=recent_days)
 
     tables: list[Table] = []
     group_statuses: dict[str, list[dict[str, str]]] = {}
@@ -504,14 +675,65 @@ if __name__ == "__main__":
         action="store_true",
         help="show one row per GPU node instead of the compact placement summary",
     )
-    parser.add_argument(
+    job_filter_group = parser.add_mutually_exclusive_group()
+    job_filter_group.add_argument(
         "--project-jobs",
         action="store_true",
-        help=f"show all jobs charged to the {PROJECT_ACCOUNT} Slurm account",
+        help=(
+            f"show visible jobs charged to the {PROJECT_ACCOUNT} Slurm account; "
+            "site privacy may restrict this to your own jobs"
+        ),
+    )
+    job_filter_group.add_argument(
+        "--user",
+        metavar="USER",
+        help=(
+            "show active jobs for USER and, by default, ended allocations from "
+            "the past 7 days; site privacy normally hides other users"
+        ),
+    )
+    parser.add_argument(
+        "--recent-days",
+        metavar="DAYS",
+        type=int,
+        help="also show ended allocations from the past positive number of DAYS",
     )
     args: argparse.Namespace = parser.parse_args()
+    if args.recent_days is not None and args.recent_days < 1:
+        parser.error("--recent-days must be at least 1")
+    if args.project_jobs and args.recent_days is not None:
+        parser.error(
+            "--recent-days cannot be combined with --project-jobs because "
+            "Noctua2 hides other users' accounting records"
+        )
+
+    selected_user: str = args.user or USER_NAME
+    recent_days: int | None = (
+        args.recent_days if args.recent_days is not None else 7 if args.user else None
+    )
+    needs_privacy_check: bool = selected_user != USER_NAME or args.project_jobs
+    private_data_categories: frozenset[str] = (
+        get_private_data_categories() if needs_privacy_check else frozenset()
+    )
     print_hpc_banner()
+    if selected_user != USER_NAME and "jobs" in private_data_categories:
+        console.print(
+            "Noctua2 hides job records for other users "
+            f"(PrivateData=jobs). qs cannot determine whether {selected_user} has "
+            "active or recently ended jobs. Ask that user, the project "
+            "coordinator, or PC2 support for the records.",
+            style="yellow",
+            markup=False,
+        )
+        raise SystemExit(2)
+    if args.project_jobs and "jobs" in private_data_categories:
+        console.print(
+            "[yellow]Noctua2 has PrivateData=jobs enabled. This project view only "
+            "contains jobs visible to your account, normally your own jobs.[/]"
+        )
     display_resources(
         detailed_gpu_nodes=args.detailed,
         project_jobs=args.project_jobs,
+        user_name=selected_user,
+        recent_days=recent_days,
     )
