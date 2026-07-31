@@ -296,11 +296,19 @@ def parse_sacct_job_fields(line: str) -> list[str]:
     return fields if len(fields) == len(SACCT_FIELDS) else []
 
 
-def get_empty_jobs_row(*, project_jobs: bool) -> list[str]:
+def get_empty_jobs_row(
+    *,
+    project_jobs: bool,
+    privacy_limited: bool = False,
+) -> list[str]:
     """Build a placeholder row with its message in the job-name column."""
     row: list[str] = ["-"] * (12 if project_jobs else 11)
     name_column_index: int = 3 if project_jobs else 2
-    row[name_column_index] = "No active jobs"
+    row[name_column_index] = (
+        "No visible active jobs (privacy may hide records)"
+        if privacy_limited
+        else "No active jobs"
+    )
     return row
 
 
@@ -310,7 +318,12 @@ def parse_squeue_job_fields(line: str) -> list[str]:
     return fields if len(fields) == 12 else []  # noqa: PLR2004
 
 
-def display_jobs(*, project_jobs: bool = False, user_name: str = USER_NAME) -> None:
+def display_jobs(
+    *,
+    project_jobs: bool = False,
+    user_name: str = USER_NAME,
+    privacy_limited: bool = False,
+) -> None:
     """Display user or project jobs, including requested RAM and GPUs per node."""
     scheduler_filter: list[str] = (
         ["--account", PROJECT_ACCOUNT] if project_jobs else ["--user", user_name]
@@ -386,11 +399,21 @@ def display_jobs(*, project_jobs: bool = False, user_name: str = USER_NAME) -> N
         job_count += 1
 
     if job_count == 0:
-        table.add_row(*get_empty_jobs_row(project_jobs=project_jobs))
+        table.add_row(
+            *get_empty_jobs_row(
+                project_jobs=project_jobs,
+                privacy_limited=privacy_limited,
+            )
+        )
     console.print(table)
 
 
-def display_recent_jobs(*, user_name: str, recent_days: int) -> None:
+def display_recent_jobs(
+    *,
+    user_name: str,
+    recent_days: int,
+    privacy_limited: bool = False,
+) -> None:
     """Display recently ended allocation records and their allocated hardware."""
     result: subprocess.CompletedProcess[str] = subprocess.run(
         [
@@ -475,7 +498,11 @@ def display_recent_jobs(*, user_name: str, recent_days: int) -> None:
         table.add_row(
             "-",
             "-",
-            "No ended allocations visible",
+            (
+                "No visible ended allocations (privacy may hide records)"
+                if privacy_limited
+                else "No ended allocations visible"
+            ),
             "-",
             "-",
             "-",
@@ -632,11 +659,20 @@ def display_resources(
     project_jobs: bool = False,
     user_name: str = USER_NAME,
     recent_days: int | None = None,
+    privacy_limited: bool = False,
 ) -> None:
     """Display the resources available on the HPC cluster."""
-    display_jobs(project_jobs=project_jobs, user_name=user_name)
+    display_jobs(
+        project_jobs=project_jobs,
+        user_name=user_name,
+        privacy_limited=privacy_limited,
+    )
     if recent_days is not None:
-        display_recent_jobs(user_name=user_name, recent_days=recent_days)
+        display_recent_jobs(
+            user_name=user_name,
+            recent_days=recent_days,
+            privacy_limited=privacy_limited,
+        )
 
     tables: list[Table] = []
     group_statuses: dict[str, list[dict[str, str]]] = {}
@@ -724,25 +760,27 @@ if __name__ == "__main__":
     private_data_categories: frozenset[str] = (
         get_private_data_categories() if needs_privacy_check else frozenset()
     )
+    privacy_limited: bool = "jobs" in private_data_categories
     print_hpc_banner()
-    if selected_user != USER_NAME and "jobs" in private_data_categories:
+    if selected_user != USER_NAME and privacy_limited:
         console.print(
-            "Noctua2 hides job records for other users "
-            f"(PrivateData=jobs). qs cannot determine whether {selected_user} has "
-            "active or recently ended jobs. Ask that user, the project "
-            "coordinator, or PC2 support for the records.",
+            "Noctua2 has PrivateData=jobs enabled. Slurm returns cross-user "
+            "records only when the caller has sufficient operator or admin "
+            f"access. Empty tables are not evidence that {selected_user} has no "
+            "jobs; ask that user, the project coordinator, or PC2 support if "
+            "you need authoritative records.",
             style="yellow",
             markup=False,
         )
-        raise SystemExit(2)
-    if args.project_jobs and "jobs" in private_data_categories:
+    if args.project_jobs and privacy_limited:
         console.print(
             "[yellow]Noctua2 has PrivateData=jobs enabled. This project view only "
-            "contains jobs visible to your account, normally your own jobs.[/]"
+            "contains jobs Slurm permits this account to see.[/]"
         )
     display_resources(
         detailed_gpu_nodes=args.detailed,
         project_jobs=args.project_jobs,
         user_name=selected_user,
         recent_days=recent_days,
+        privacy_limited=privacy_limited,
     )

@@ -54,6 +54,15 @@ class ResourceCheckTests(unittest.TestCase):
         self.assertEqual(row[2], "-")
         self.assertEqual(row[3], "No active jobs")
 
+    def test_privacy_limited_empty_row_does_not_claim_no_jobs(self) -> None:
+        """Keep an empty scheduler result distinct from confirmed inactivity."""
+        row = get_empty_jobs_row(project_jobs=False, privacy_limited=True)
+
+        self.assertEqual(
+            row[2],
+            "No visible active jobs (privacy may hide records)",
+        )
+
     @patch("hpc_server_tools.resource_stats.resource_check.subprocess.run")
     def test_malformed_squeue_output_still_displays_empty_placeholder(
         self, run_mock
