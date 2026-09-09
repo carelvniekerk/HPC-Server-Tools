@@ -23,17 +23,54 @@
 # limitations under the License.
 """Check the resources available on the HPC cluster."""
 
+import argparse
+import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 
+from hpc_server_tools.configuration import COMPUTE_NODE_GROUPS, USER_NAME
 from rich import box
 from rich.columns import Columns
 from rich.console import Console
 from rich.table import Table
-
-from hpc_server_tools.configuration import COMPUTE_NODE_GROUPS, USER_NAME
+from rich.text import Text
 
 console: Console = Console()
+
+PROJECT_ACCOUNT: str = "hpc-prf-trust"
+SQUEUE_FIELD_SEPARATOR: str = "\x1f"
+SQUEUE_FORMAT: str = SQUEUE_FIELD_SEPARATOR.join(
+    (
+        "%i",
+        "%u",
+        "%P",
+        "%j",
+        "%t",
+        "%M",
+        "%l",
+        "%D",
+        "%C",
+        "%m",
+        "%b",
+        "%R",
+    )
+)
+SACCT_FIELD_SEPARATOR: str = "\x1f"
+SACCT_FIELDS: tuple[str, ...] = (
+    "JobIDRaw",
+    "Partition",
+    "JobName%256",
+    "State",
+    "End",
+    "Elapsed",
+    "Timelimit",
+    "NNodes",
+    "NCPUS",
+    "AllocTRES%1024",
+    "NodeList%1024",
+    "ExitCode",
+)
+SCHEDULABLE_NODE_STATES: frozenset[str] = frozenset({"IDLE", "MIXED"})
 
 
 def get_node_status(node_name: str) -> dict[str, str]:
@@ -46,9 +83,19 @@ def get_node_status(node_name: str) -> dict[str, str]:
             capture_output=True,
         ).stdout.decode("utf-8")
         node_info: list[str] = scontrol_return.split("\n")
-        memory: str = next(line for line in node_info if "FreeMem" in line)
-        memory = memory.split("FreeMem=", 1)[-1].split(" ", 1)[0]
-        memory = f"{memory}mb"
+        memory_info: str = next(
+            line for line in node_info if "RealMemory=" in line and "AllocMem=" in line
+        )
+        real_memory_match: re.Match[str] | None = re.search(
+            r"\bRealMemory=(\d+)", memory_info
+        )
+        allocated_memory_match: re.Match[str] | None = re.search(
+            r"\bAllocMem=(\d+)", memory_info
+        )
+        if real_memory_match is None or allocated_memory_match is None:
+            raise ValueError("missing RealMemory or AllocMem")
+        real_memory: str = f"{real_memory_match.group(1)}mb"
+        allocated_memory: str = f"{allocated_memory_match.group(1)}mb"
 
         resources_info: str = next(line for line in node_info if "CfgTRES=" in line)
         cpus_available: str = resources_info.split("cpu=", 1)[-1].split(",", 1)[0]
@@ -65,29 +112,56 @@ def get_node_status(node_name: str) -> dict[str, str]:
         else:
             gpus_allocated = resources_info.split("gpu=", 1)[-1].split(",", 1)[0]
 
+        state_info: str = next((line for line in node_info if "State=" in line), "")
+        state: str = (
+            state_info.split("State=", 1)[-1].split(" ", 1)[0]
+            if state_info
+            else "UNKNOWN"
+        )
+
         return {  # noqa: TRY300
+            "node_name": node_name,
+            "state": state,
             "resources_available.ncpus": cpus_available,
             "resources_available.ngpus": gpus_available,
             "resources_assigned.ncpus": cpus_allocated,
             "resources_assigned.ngpus": gpus_allocated,
-            "resources_available.mem": memory,
-            "resources_assigned.mem": "0mb",
+            "resources_available.mem": real_memory,
+            "resources_assigned.mem": allocated_memory,
         }
 
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Error getting status for node {node_name}: {e}[/red]")
+        return {}
+    except (StopIteration, ValueError) as e:
+        console.print(
+            f"[red]Could not parse scheduler status for node {node_name}: {e}[/red]"
+        )
         return {}
 
 
 def get_resources_available(node_status: dict[str, str]) -> dict[str, float]:
     """Get the resources available on a node in the HPC cluster."""
     resources: dict[str, float] = {"ncpus": 0, "ngpus": 0, "mem": 0}
-    # if "state" not in node_status or node_status["state"] != "free":
-    #     return resources
+    if not is_node_schedulable(node_status):
+        return resources
 
     for resource in resources:
         resources[resource] = get_avail(node_status, resource)
     return resources
+
+
+def is_node_schedulable(node_status: dict[str, str]) -> bool:
+    """Return whether Slurm can place new work on a node."""
+    state: str = node_status.get("state", "UNKNOWN")
+    # Fail closed: compound flags such as IDLE+DRAIN and IDLE+INVALID_REG can
+    # make an otherwise usable base state unavailable to new work.
+    return state in SCHEDULABLE_NODE_STATES
+
+
+def get_schedulable_memory_gib(node_status: dict[str, str]) -> int:
+    """Return Slurm RAM request headroom, rounded down to whole GiB."""
+    return int(get_avail(node_status, "mem")) if is_node_schedulable(node_status) else 0
 
 
 def get_avail(status: dict[str, str], resource: str) -> float:
@@ -131,10 +205,14 @@ _|"""""|_|"""""|_|"""""|_|"""""|_|"""""|_|"""""|_|"""""| {======|_|"""""|_|"""""
     console.print(banner, style="bold blue", justify="left")
 
 
-def aggregate_resources(nodes: list[str]) -> dict[str, float]:
-    """Aggregate resources across a list of nodes."""
+def get_node_statuses(nodes: list[str]) -> list[dict[str, str]]:
+    """Get scheduler status for a list of nodes concurrently."""
     with ThreadPoolExecutor() as executor:
-        status_list: list[dict[str, str]] = list(executor.map(get_node_status, nodes))
+        return list(executor.map(get_node_status, nodes))
+
+
+def aggregate_resources(status_list: list[dict[str, str]]) -> dict[str, float]:
+    """Aggregate resources across node-status records."""
     resources_list: list[dict[str, float]] = [
         get_resources_available(status) for status in status_list
     ]
@@ -143,25 +221,466 @@ def aggregate_resources(nodes: list[str]) -> dict[str, float]:
     return {key: sum(node[key] for node in resources_list) for key in resources_list[0]}
 
 
-def display_resources() -> None:
-    """Display the resources available on the HPC cluster."""
-    # Display the job status
-    console.print(
-        subprocess.run(
-            f"squeue --user {USER_NAME}",
-            capture_output=True,
-            check=True,
-            shell=True,
-            text=True,
-        ).stdout,
-        style="bold blue",
-        justify="left",
+def format_gpu_request(gres_or_tres: str) -> str:
+    """Format GPU counts from Slurm GRES or TRES syntax."""
+    gpu_requests: list[tuple[str, str]] = []
+    for item in gres_or_tres.split(","):
+        match = re.fullmatch(
+            r"(?:gres/)?gpu(?::([^,:=]+))?[:=](\d+)(?:\([^)]*\))?",
+            item.strip(),
+        )
+        if match is not None:
+            gpu_requests.append((match.group(1) or "", match.group(2)))
+    if not gpu_requests:
+        return "0"
+    typed_gpu_requests: list[tuple[str, str]] = [
+        request for request in gpu_requests if request[0]
+    ]
+    if typed_gpu_requests:
+        gpu_requests = typed_gpu_requests
+    return ", ".join(
+        f"{count} {gpu_type}" if gpu_type else count for gpu_type, count in gpu_requests
     )
 
+
+def format_allocated_memory(alloc_tres: str) -> str:
+    """Return total allocated memory from a Slurm AllocTRES value."""
+    match: re.Match[str] | None = re.search(r"(?:^|,)mem=([^,]+)", alloc_tres)
+    return match.group(1) if match is not None else "-"
+
+
+def format_memory_request(memory: str) -> str:
+    """Expose whether squeue's minimum memory request is per CPU or per node."""
+    if memory.endswith("c"):
+        return f"{memory[:-1]} / CPU"
+    if memory.endswith("n"):
+        return f"{memory[:-1]} / node"
+    return f"{memory} / node"
+
+
+def format_day_count(days: int) -> str:
+    """Format a positive day count for user-facing table titles."""
+    return f"{days} {'day' if days == 1 else 'days'}"
+
+
+def parse_private_data_categories(config_output: str) -> frozenset[str]:
+    """Parse Slurm's configured PrivateData categories."""
+    match: re.Match[str] | None = re.search(
+        r"^PrivateData\s*=\s*(.*)$",
+        config_output,
+        flags=re.MULTILINE,
+    )
+    if match is None:
+        return frozenset()
+    return frozenset(
+        category.strip().lower()
+        for category in match.group(1).split(",")
+        if category.strip() and category.strip().lower() != "none"
+    )
+
+
+def get_private_data_categories() -> frozenset[str]:
+    """Read the live Slurm privacy configuration."""
+    result: subprocess.CompletedProcess[str] = subprocess.run(
+        ["scontrol", "show", "config"],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+    return parse_private_data_categories(result.stdout)
+
+
+def parse_sacct_job_fields(line: str) -> list[str]:
+    """Split one encoded sacct allocation record."""
+    fields: list[str] = line.split(SACCT_FIELD_SEPARATOR, len(SACCT_FIELDS) - 1)
+    return fields if len(fields) == len(SACCT_FIELDS) else []
+
+
+def get_empty_jobs_row(
+    *,
+    project_jobs: bool,
+    privacy_limited: bool = False,
+) -> list[str]:
+    """Build a placeholder row with its message in the job-name column."""
+    row: list[str] = ["-"] * (12 if project_jobs else 11)
+    name_column_index: int = 3 if project_jobs else 2
+    row[name_column_index] = (
+        "No visible active jobs (privacy may hide records)"
+        if privacy_limited
+        else "No active jobs"
+    )
+    return row
+
+
+def parse_squeue_job_fields(line: str) -> list[str]:
+    """Split one encoded squeue record without colliding with printable job names."""
+    fields: list[str] = line.split(SQUEUE_FIELD_SEPARATOR, 11)
+    return fields if len(fields) == 12 else []  # noqa: PLR2004
+
+
+def display_jobs(
+    *,
+    project_jobs: bool = False,
+    user_name: str = USER_NAME,
+    privacy_limited: bool = False,
+) -> None:
+    """Display user or project jobs, including requested RAM and GPUs per node."""
+    scheduler_filter: list[str] = (
+        ["--account", PROJECT_ACCOUNT] if project_jobs else ["--user", user_name]
+    )
+    result: subprocess.CompletedProcess[str] = subprocess.run(
+        [
+            "squeue",
+            *scheduler_filter,
+            "--noheader",
+            f"--format={SQUEUE_FORMAT}",
+        ],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+
+    table_title: str = (
+        f"Jobs for Slurm account {PROJECT_ACCOUNT}"
+        if project_jobs
+        else f"Jobs for {user_name}"
+    )
+    table: Table = Table(title=table_title, box=box.SIMPLE_HEAVY)
+    table.add_column("Job ID", style="bold")
+    if project_jobs:
+        table.add_column("User")
+    table.add_column("Partition")
+    table.add_column("Name")
+    table.add_column("State", justify="center")
+    table.add_column("Elapsed", justify="right")
+    table.add_column("Time limit", justify="right")
+    table.add_column("Nodes", justify="right")
+    table.add_column("CPUs", justify="right")
+    table.add_column("RAM request", justify="right")
+    table.add_column("GPUs / node", justify="right")
+    table.add_column("Node / reason")
+
+    job_count: int = 0
+    for line in result.stdout.splitlines():
+        fields: list[str] = parse_squeue_job_fields(line)
+        if not fields:
+            continue
+        (
+            job_id,
+            user,
+            partition,
+            name,
+            state,
+            elapsed,
+            time_limit,
+            nodes,
+            cpus,
+            memory,
+            tres,
+            reason,
+        ) = fields
+        state_color: str = "green" if state == "R" else "yellow"
+        row: list[str | Text] = [
+            job_id,
+            partition,
+            Text(name),
+            f"[{state_color}]{state}[/]",
+            elapsed,
+            time_limit,
+            nodes,
+            cpus,
+            format_memory_request(memory),
+            format_gpu_request(tres),
+            Text(reason),
+        ]
+        if project_jobs:
+            row.insert(1, user)
+        table.add_row(*row)
+        job_count += 1
+
+    if job_count == 0:
+        table.add_row(
+            *get_empty_jobs_row(
+                project_jobs=project_jobs,
+                privacy_limited=privacy_limited,
+            )
+        )
+    console.print(table)
+
+
+def display_recent_jobs(
+    *,
+    user_name: str,
+    recent_days: int,
+    privacy_limited: bool = False,
+) -> None:
+    """Display recently ended allocation records and their allocated hardware."""
+    result: subprocess.CompletedProcess[str] = subprocess.run(
+        [
+            "sacct",
+            "--allocations",
+            "--starttime",
+            f"now-{recent_days}days",
+            "--user",
+            user_name,
+            "--noheader",
+            "--parsable2",
+            f"--delimiter={SACCT_FIELD_SEPARATOR}",
+            f"--format={','.join(SACCT_FIELDS)}",
+        ],
+        capture_output=True,
+        check=True,
+        text=True,
+    )
+
+    table: Table = Table(
+        title=(
+            f"Ended allocations for {user_name} in the past "
+            f"{format_day_count(recent_days)}"
+        ),
+        box=box.SIMPLE_HEAVY,
+    )
+    table.add_column("Job ID", style="bold")
+    table.add_column("Partition")
+    table.add_column("Name")
+    table.add_column("State", justify="center")
+    table.add_column("Ended")
+    table.add_column("Elapsed", justify="right")
+    table.add_column("Time limit", justify="right")
+    table.add_column("Nodes", justify="right")
+    table.add_column("CPUs", justify="right")
+    table.add_column("Alloc RAM", justify="right")
+    table.add_column("Alloc GPUs", justify="right")
+    table.add_column("Node list")
+    table.add_column("Exit")
+
+    ended_job_count: int = 0
+    for line in result.stdout.splitlines():
+        fields: list[str] = parse_sacct_job_fields(line)
+        if not fields:
+            continue
+        (
+            job_id,
+            partition,
+            name,
+            state,
+            end,
+            elapsed,
+            time_limit,
+            nodes,
+            cpus,
+            alloc_tres,
+            node_list,
+            exit_code,
+        ) = fields
+        if not end or end in {"Unknown", "N/A", "None"}:
+            continue
+        state_name: str = state.split(" ", 1)[0]
+        state_color: str = "green" if state_name == "COMPLETED" else "red"
+        table.add_row(
+            job_id,
+            partition,
+            Text(name),
+            f"[{state_color}]{state}[/]",
+            end,
+            elapsed,
+            time_limit,
+            nodes,
+            cpus,
+            format_allocated_memory(alloc_tres),
+            format_gpu_request(alloc_tres),
+            Text(node_list),
+            exit_code,
+        )
+        ended_job_count += 1
+
+    if ended_job_count == 0:
+        table.add_row(
+            "-",
+            "-",
+            (
+                "No visible ended allocations (privacy may hide records)"
+                if privacy_limited
+                else "No ended allocations visible"
+            ),
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+            "-",
+        )
+    console.print(table)
+
+
+def compress_node_names(node_names: list[str]) -> str:
+    """Compress consecutively numbered nodes into a Slurm-style host list."""
+    parsed_names: list[tuple[str, str]] = []
+    for node_name in sorted(node_names):
+        match: re.Match[str] | None = re.fullmatch(r"(.*?)(\d+)", node_name)
+        if match is None:
+            return ", ".join(sorted(node_names))
+        parsed_names.append((match.group(1), match.group(2)))
+
+    prefixes: set[str] = {prefix for prefix, _ in parsed_names}
+    widths: set[int] = {len(number) for _, number in parsed_names}
+    if len(prefixes) != 1 or len(widths) != 1:
+        return ", ".join(sorted(node_names))
+    if len(parsed_names) == 1:
+        return node_names[0]
+
+    prefix: str = parsed_names[0][0]
+    width: int = len(parsed_names[0][1])
+    numbers: list[int] = sorted(int(number) for _, number in parsed_names)
+    ranges: list[tuple[int, int]] = []
+    range_start: int = numbers[0]
+    range_end: int = numbers[0]
+    for number in numbers[1:]:
+        if number == range_end + 1:
+            range_end = number
+            continue
+        ranges.append((range_start, range_end))
+        range_start = range_end = number
+    ranges.append((range_start, range_end))
+
+    parts: list[str] = [
+        f"{start:0{width}d}-{end:0{width}d}" if start != end else f"{start:0{width}d}"
+        for start, end in ranges
+    ]
+    return f"{prefix}[{','.join(parts)}]"
+
+
+def display_gpu_node_summary(
+    group_name: str,
+    status_list: list[dict[str, str]],
+) -> None:
+    """Summarize nodes grouped by scheduler state and free GPUs per node."""
+    gpu_statuses: list[dict[str, str]] = [
+        status
+        for status in status_list
+        if int(status.get("resources_available.ngpus", "0")) > 0
+    ]
+    if not gpu_statuses:
+        return
+
+    grouped_nodes: dict[tuple[str, int, int], list[dict[str, str]]] = {}
+    for status in gpu_statuses:
+        total: int = int(status["resources_available.ngpus"])
+        allocated: int = int(status["resources_assigned.ngpus"])
+        free: int = max(total - allocated, 0) if is_node_schedulable(status) else 0
+        state: str = status.get("state", "UNKNOWN")
+        grouped_nodes.setdefault((state, free, total), []).append(status)
+
+    table: Table = Table(title=f"{group_name} GPU placement", box=box.SIMPLE_HEAVY)
+    table.add_column("Free GPUs / node", justify="right", style="bold")
+    table.add_column("State")
+    table.add_column("Count", justify="right")
+    table.add_column("Total free GPUs", justify="right", style="bold")
+    table.add_column("RAM headroom / node", justify="right")
+    table.add_column("Nodes")
+
+    sorted_groups: list[tuple[tuple[str, int, int], list[dict[str, str]]]] = sorted(
+        grouped_nodes.items(),
+        key=lambda item: (-item[0][1], item[0][0], item[0][2]),
+    )
+    for (state, free, total), statuses in sorted_groups:
+        node_names: list[str] = [status["node_name"] for status in statuses]
+        memory_headrooms: list[int] = [
+            get_schedulable_memory_gib(status) for status in statuses
+        ]
+        min_memory: int = min(memory_headrooms)
+        max_memory: int = max(memory_headrooms)
+        memory_range: str = (
+            f"{min_memory} GiB"
+            if min_memory == max_memory
+            else f"{min_memory}–{max_memory} GiB"
+        )
+        free_color: str = "green" if free == total else "yellow" if free else "red"
+        state_color: str = "green" if state in SCHEDULABLE_NODE_STATES else "red"
+        table.add_row(
+            f"[{free_color}]{free} / {total}[/]",
+            f"[{state_color}]{state}[/]",
+            str(len(node_names)),
+            f"{len(node_names)} × {free} = {len(node_names) * free}",
+            memory_range,
+            Text(compress_node_names(node_names)),
+        )
+
+    console.print(table)
+
+
+def display_gpu_nodes_detailed(
+    group_name: str,
+    status_list: list[dict[str, str]],
+) -> None:
+    """Display one row per GPU node for detailed placement inspection."""
+    gpu_statuses: list[dict[str, str]] = [
+        status
+        for status in status_list
+        if int(status.get("resources_available.ngpus", "0")) > 0
+    ]
+    if not gpu_statuses:
+        return
+
+    table: Table = Table(title=f"{group_name} GPUs by node", box=box.SIMPLE_HEAVY)
+    table.add_column("Node", style="bold")
+    table.add_column("State")
+    table.add_column("Free", justify="right")
+    table.add_column("Allocated", justify="right")
+    table.add_column("Total", justify="right")
+    table.add_column("RAM headroom", justify="right")
+
+    for status in sorted(gpu_statuses, key=lambda item: item["node_name"]):
+        total: int = int(status["resources_available.ngpus"])
+        allocated: int = int(status["resources_assigned.ngpus"])
+        free: int = max(total - allocated, 0) if is_node_schedulable(status) else 0
+        free_color: str = "green" if free == total else "yellow" if free else "red"
+        state: str = status.get("state", "UNKNOWN")
+        state_color: str = "red" if not is_node_schedulable(status) else "green"
+        table.add_row(
+            status["node_name"],
+            f"[{state_color}]{state}[/]",
+            f"[{free_color}]{free}[/]",
+            str(allocated),
+            str(total),
+            f"{get_schedulable_memory_gib(status)} GiB",
+        )
+
+    console.print(table)
+
+
+def display_resources(
+    *,
+    detailed_gpu_nodes: bool = False,
+    project_jobs: bool = False,
+    user_name: str = USER_NAME,
+    recent_days: int | None = None,
+    privacy_limited: bool = False,
+) -> None:
+    """Display the resources available on the HPC cluster."""
+    display_jobs(
+        project_jobs=project_jobs,
+        user_name=user_name,
+        privacy_limited=privacy_limited,
+    )
+    if recent_days is not None:
+        display_recent_jobs(
+            user_name=user_name,
+            recent_days=recent_days,
+            privacy_limited=privacy_limited,
+        )
+
     tables: list[Table] = []
+    group_statuses: dict[str, list[dict[str, str]]] = {}
 
     for group_name, nodes in COMPUTE_NODE_GROUPS.items():
-        resources: dict[str, float] = aggregate_resources(nodes)
+        status_list: list[dict[str, str]] = get_node_statuses(nodes)
+        group_statuses[group_name] = status_list
+        resources: dict[str, float] = aggregate_resources(status_list)
         table: Table = Table(
             title=f"{group_name} Resources",
             box=box.SIMPLE_HEAVY,
@@ -185,7 +704,83 @@ def display_resources() -> None:
     for i in range(0, len(tables), 4):
         console.print(Columns(tables[i : i + 4]))
 
+    for group_name, status_list in group_statuses.items():
+        if detailed_gpu_nodes:
+            display_gpu_nodes_detailed(group_name, status_list)
+        else:
+            display_gpu_node_summary(group_name, status_list)
+
 
 if __name__ == "__main__":
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description="Show jobs and schedulable cluster resources.",
+    )
+    parser.add_argument(
+        "--detailed",
+        action="store_true",
+        help="show one row per GPU node instead of the compact placement summary",
+    )
+    job_filter_group = parser.add_mutually_exclusive_group()
+    job_filter_group.add_argument(
+        "--project-jobs",
+        action="store_true",
+        help=(
+            f"show visible jobs charged to the {PROJECT_ACCOUNT} Slurm account; "
+            "site privacy may restrict this to your own jobs"
+        ),
+    )
+    job_filter_group.add_argument(
+        "--user",
+        metavar="USER",
+        help=(
+            "show active jobs for USER and, by default, ended allocations from "
+            "the past 7 days; site privacy normally hides other users"
+        ),
+    )
+    parser.add_argument(
+        "--recent-days",
+        metavar="DAYS",
+        type=int,
+        help="also show ended allocations from the past positive number of DAYS",
+    )
+    args: argparse.Namespace = parser.parse_args()
+    if args.recent_days is not None and args.recent_days < 1:
+        parser.error("--recent-days must be at least 1")
+    if args.project_jobs and args.recent_days is not None:
+        parser.error(
+            "--recent-days cannot be combined with --project-jobs because "
+            "Noctua2 hides other users' accounting records"
+        )
+
+    selected_user: str = args.user or USER_NAME
+    recent_days: int | None = (
+        args.recent_days if args.recent_days is not None else 7 if args.user else None
+    )
+    needs_privacy_check: bool = selected_user != USER_NAME or args.project_jobs
+    private_data_categories: frozenset[str] = (
+        get_private_data_categories() if needs_privacy_check else frozenset()
+    )
+    privacy_limited: bool = "jobs" in private_data_categories
     print_hpc_banner()
-    display_resources()
+    if selected_user != USER_NAME and privacy_limited:
+        console.print(
+            "Noctua2 has PrivateData=jobs enabled. Slurm returns cross-user "
+            "records only when the caller has sufficient operator or admin "
+            f"access. Empty tables are not evidence that {selected_user} has no "
+            "jobs; ask that user, the project coordinator, or PC2 support if "
+            "you need authoritative records.",
+            style="yellow",
+            markup=False,
+        )
+    if args.project_jobs and privacy_limited:
+        console.print(
+            "[yellow]Noctua2 has PrivateData=jobs enabled. This project view only "
+            "contains jobs Slurm permits this account to see.[/]"
+        )
+    display_resources(
+        detailed_gpu_nodes=args.detailed,
+        project_jobs=args.project_jobs,
+        user_name=selected_user,
+        recent_days=recent_days,
+        privacy_limited=privacy_limited,
+    )

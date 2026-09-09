@@ -41,7 +41,14 @@ The following tools are available in the user_tools repository:
 
 - `qi-setup`: A tool to set up the parameters for an interactive job on the HPC system.
 - `qi`: A tool to submit an interactive job on the HPC system.
-- `qs`: A tool to get the status of jobs and resources on the HPC system.
+- `qs`: A GPU-aware view of active jobs and schedulable resources. Use
+  `qs --recent-days 7` to add ended allocations for the current user with
+  their allocated CPUs, RAM, GPUs, and nodes. `qs --user <username>` requests
+  another user's live and recent jobs. When the cluster's Slurm privacy policy
+  applies, the command warns that empty tables may mean hidden records while
+  still allowing privileged Slurm operators to see what their role permits.
+  `qs --project-jobs` similarly labels its output as privacy-limited instead of
+  claiming a complete project inventory.
 - `activate`: A tool to activate a Python virtual environment in a project directory. (Virtual env should be in the project repository named `.venv`.)
 - `submit_job`: A tool to submit a job to the HPC system. Job script parameters should be specified as:
 ```bash
