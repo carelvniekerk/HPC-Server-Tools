@@ -37,6 +37,37 @@ cd ..
 Should you wish to rerun this script at a later time, change the value of the `SETUP_COMPLETE` variable in the `.bash_env file` to `False`.
 
 ## Tools
+### Noctua2 interactive GPU allocations
+
+On a Noctua2 login node, inside tmux:
+
+```bash
+qi-gpu 1 --mem 128G                  # Default: eight hours
+qi-gpu 1 --mem=256G --time=01:00:00
+qi-2-gpu --mem 160G
+qi-gpu --help
+```
+
+The memory override is total **host RAM per node**, not GPU VRAM or RAM per GPU.
+Defaults remain two CPUs, 52 GiB host RAM per GPU, one production GPU node, and
+eight hours. Options affect only this invocation; plain `qi` keeps its saved
+command. More RAM may increase queue wait. Check placement with `qs` first.
+
+The implementation belongs to this repository at
+`hpc_server_tools/job_submission/interactive_gpu.sh`, sourced by `scripts/aliases`.
+Deploy those files together; do not replace machine-local shell configuration or
+the generated `qi.sh`. Existing shells can source the helper again or reconnect.
+Neither Topo_LLM nor rl_experiments is needed to use it.
+
+Run the dependency-free tests from this repository root (the scheduler is stubbed;
+these commands never request an allocation):
+
+```bash
+bash tests/test_interactive_gpu.sh
+zsh tests/test_interactive_gpu.sh
+```
+
+### Other commands
 The following tools are available in the user_tools repository:
 
 - `qi-setup`: A tool to set up the parameters for an interactive job on the HPC system.

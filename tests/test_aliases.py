@@ -14,7 +14,7 @@ class InteractiveAllocationAliasTests(unittest.TestCase):
         repository = Path(__file__).resolve().parents[1]
         environment = {
             **os.environ,
-            "HPC_TOOLS_PATH": "/tmp/hpc_server_tools",
+            "HPC_TOOLS_PATH": str(repository / "hpc_server_tools"),
             "HPC_USER_ROOT": "/tmp",
             "USER_NAME": "test-user",
         }
@@ -43,7 +43,7 @@ qi-gpu "$1"
                 self.assertIn("--nodes=1", arguments)
                 self.assertIn("Requesting Noctua2 interactive allocation:", arguments)
                 self.assertIn(
-                    f"  GPUs={gpu_count} x A100 CPUs=2 RAM={memory_gib}G walltime=8:00:00",
+                    f"  GPUs={gpu_count} x A100 CPUs=2 RAM={memory_gib}G walltime=08:00:00",
                     arguments,
                 )
 
