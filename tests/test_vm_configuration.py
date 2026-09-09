@@ -3,7 +3,9 @@
 import os
 import sys
 import unittest
+from contextlib import redirect_stdout
 from dataclasses import replace
+from io import StringIO
 from unittest.mock import patch
 
 from hpc_server_tools.job_submission.vm_configuration import get_vm_config, parse_args
@@ -11,6 +13,31 @@ from hpc_server_tools.vm_templates import INTERACTIVE_DEFAULTS, JOB_DEFAULTS, TE
 
 
 class ResourceOverrideTests(unittest.TestCase):
+    def test_every_template_keeps_omitted_values_in_both_modes(self):
+        for name, template in TEMPLATES.items():
+            for interactive in (False, True):
+                with self.subTest(template=name, interactive=interactive):
+                    self.assertEqual(
+                        self.resolve(f"--template={name}", interactive=interactive),
+                        template,
+                    )
+
+    def test_help_describes_inheritance_without_exposing_suppress_sentinel(self):
+        for interactive in (False, True):
+            with self.subTest(interactive=interactive):
+                output = StringIO()
+                with (
+                    patch.object(sys, "argv", ["helper", "--help"]),
+                    redirect_stdout(output),
+                    self.assertRaises(SystemExit) as result,
+                ):
+                    parse_args(is_interactive=interactive)
+                self.assertEqual(result.exception.code, 0)
+                help_text = " ".join(output.getvalue().split())
+                self.assertIn("Omitted options inherit template values", help_text)
+                self.assertIn("Without a matching template", help_text)
+                self.assertNotIn("==SUPPRESS==", help_text)
+
     def test_generated_scheduler_preamble_uses_explicit_resources(self):
         # Import only the renderer; never invoke the scheduler or write a job.
         with patch.dict(os.environ, {"USER_NAME": "test-user"}):
