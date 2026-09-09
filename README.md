@@ -37,6 +37,7 @@ cd ..
 Should you wish to rerun this script at a later time, change the value of the `SETUP_COMPLETE` variable in the `.bash_env file` to `False`.
 
 ## Tools
+
 ### Noctua2 interactive GPU allocations
 
 On a Noctua2 login node, inside tmux:
@@ -68,6 +69,16 @@ zsh tests/test_interactive_gpu.sh
 ```
 
 ### Other commands
+
+Resource options passed to `submit_job` or `qi-setup` override the selected template,
+even when they equal the usual defaults. For example, `--template CPU --ncpus 2
+--memory 16 --ngpus 0` keeps the explicit 2-CPU/16-GB request. Omitted resource
+options inherit the template; without a matching template, the batch or interactive
+defaults apply. Resolving an override does not modify the reusable template.
+
+Regression tests (no scheduler submission):
+`uv run python -m unittest discover -s tests -p test_vm_configuration.py -v`.
+
 The following tools are available in the user_tools repository:
 
 - `qi-setup`: A tool to set up the parameters for an interactive job on the HPC system.
