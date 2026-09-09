@@ -1,4 +1,3 @@
-# coding=utf-8
 # --------------------------------------------------------------------------------
 # Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
@@ -23,7 +22,7 @@
 # limitations under the License.
 """Create a VM configuration for job submission."""
 
-from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
+from argparse import SUPPRESS, ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from pathlib import Path
 
 from hpc_server_tools.vm_templates import (
@@ -39,8 +38,13 @@ from hpc_server_tools.vm_templates import (
 
 def parse_args(*, is_interactive: bool = False) -> Namespace:
     defaults: VMConfig = INTERACTIVE_DEFAULTS if is_interactive else JOB_DEFAULTS
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    """Parse the command-line arguments."""
+    parser = ArgumentParser(
+        formatter_class=ArgumentDefaultsHelpFormatter,
+        description="Explicit resource options override the selected template. "
+        "Omitted options inherit template values.",
+        epilog=f"Without a matching template, defaults are {defaults.num_cpus} CPUs, "
+        f"{defaults.memory} GB RAM, {defaults.num_gpus} GPUs and walltime {defaults.walltime}.",
+    )
     # VM Configuration Arguments
     parser.add_argument(
         "--template",
@@ -51,43 +55,43 @@ def parse_args(*, is_interactive: bool = False) -> Namespace:
     parser.add_argument(
         "--queue",
         help="Job Queue",
-        default=defaults.queue,
+        default=SUPPRESS,
         type=HPCQueue,
     )
     parser.add_argument(
         "--ncpus",
         help="Number of CPUs",
-        default=defaults.num_cpus,
+        default=SUPPRESS,
         type=int,
     )
     parser.add_argument(
         "--memory",
         help="Amount of memory in GB",
-        default=defaults.memory,
+        default=SUPPRESS,
         type=int,
     )
     parser.add_argument(
         "--ngpus",
         help="Number of GPUs",
-        default=defaults.num_gpus,
+        default=SUPPRESS,
         type=int,
     )
     parser.add_argument(
         "--accelerator_model",
         help="GPU model",
-        default=defaults.accelerator_model,
+        default=SUPPRESS,
         type=AcceleratorModel,
     )
     parser.add_argument(
         "--architecture",
         help="CPU Architecture",
-        default=defaults.architecture,
+        default=SUPPRESS,
         type=Architecture,
     )
     parser.add_argument(
         "--walltime",
         help="Walltime in format hh:mm:ss, eg 08:00:00",
-        default=defaults.walltime,
+        default=SUPPRESS,
         type=str,
     )
 
@@ -116,59 +120,17 @@ def parse_args(*, is_interactive: bool = False) -> Namespace:
 def get_vm_config(cmd_args: Namespace, *, is_interactive: bool = False) -> VMConfig:
     """Get the VM configuration for job submission."""
     defaults: VMConfig = INTERACTIVE_DEFAULTS if is_interactive else JOB_DEFAULTS
-    if cmd_args.template not in TEMPLATES:
-        return VMConfig(
-            queue=cmd_args.queue,
-            num_cpus=cmd_args.ncpus,
-            memory=cmd_args.memory,
-            num_gpus=cmd_args.ngpus,
-            accelerator_model=cmd_args.accelerator_model,
-            architecture=cmd_args.architecture,
-            walltime=cmd_args.walltime,
-        )
-
-    queue: HPCQueue = (
-        TEMPLATES[cmd_args.template].queue
-        if cmd_args.queue == defaults.queue
-        else cmd_args.queue
-    )
-    num_cpus: int = (
-        TEMPLATES[cmd_args.template].num_cpus
-        if cmd_args.ncpus == defaults.num_cpus
-        else cmd_args.ncpus
-    )
-    memory: int = (
-        TEMPLATES[cmd_args.template].memory
-        if cmd_args.memory == defaults.memory
-        else cmd_args.memory
-    )
-    num_gpus: int = (
-        TEMPLATES[cmd_args.template].num_gpus
-        if cmd_args.ngpus == defaults.num_gpus
-        else cmd_args.ngpus
-    )
-    accelerator_model: AcceleratorModel = (
-        TEMPLATES[cmd_args.template].accelerator_model
-        if cmd_args.accelerator_model == defaults.accelerator_model
-        else cmd_args.accelerator_model
-    )
-    architecture: Architecture = (
-        TEMPLATES[cmd_args.template].architecture
-        if cmd_args.architecture == defaults.architecture
-        else cmd_args.architecture
-    )
-    walltime: str = (
-        TEMPLATES[cmd_args.template].walltime
-        if cmd_args.walltime == defaults.walltime
-        else cmd_args.walltime
-    )
-
+    # SUPPRESS preserves whether an option was supplied. Equality to a default
+    # cannot tell omission from an intentional override (issue #1).
+    base = TEMPLATES.get(cmd_args.template, defaults)
     return VMConfig(
-        queue=queue,
-        num_cpus=num_cpus,
-        memory=memory,
-        num_gpus=num_gpus,
-        accelerator_model=accelerator_model,
-        architecture=architecture,
-        walltime=walltime,
+        queue=getattr(cmd_args, "queue", base.queue),
+        num_cpus=getattr(cmd_args, "ncpus", base.num_cpus),
+        memory=getattr(cmd_args, "memory", base.memory),
+        num_gpus=getattr(cmd_args, "ngpus", base.num_gpus),
+        accelerator_model=getattr(
+            cmd_args, "accelerator_model", base.accelerator_model
+        ),
+        architecture=getattr(cmd_args, "architecture", base.architecture),
+        walltime=getattr(cmd_args, "walltime", base.walltime),
     )
