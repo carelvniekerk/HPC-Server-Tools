@@ -11,14 +11,14 @@ from rich.console import Console
 
 os.environ.setdefault("USER_NAME", "test-user")
 
-from hpc_server_tools.job_submission.job_log import (  # noqa: E402
+from hpc_server_tools.job_submission.job_log import (
+    SQUEUE_FIELD_SEPARATOR,
+    follow_log_or_exit,
     get_job_log_path,
     get_job_log_path_or_exit,
     get_jobs,
     get_jobs_or_exit,
-    follow_log_or_exit,
     parse_scontrol_metadata,
-    SQUEUE_FIELD_SEPARATOR,
 )
 
 
@@ -102,6 +102,16 @@ class GetJobsTest(unittest.TestCase):
 
 class GetJobLogPathTest(unittest.TestCase):
     """Test parsing of the paths reported by ``scontrol show job``."""
+
+    def test_preserves_uppercase_field_like_path_fragments(self) -> None:
+        metadata = parse_scontrol_metadata(
+            "JobId=50 WorkDir=/scratch/project Experiment=42 "
+            "StdOut=logs/Run=42/job output Run=7.log "
+            "StdErr=errors.log NumNodes=1"
+        )
+        self.assertEqual(metadata["WorkDir"], "/scratch/project Experiment=42")
+        self.assertEqual(metadata["StdOut"], "logs/Run=42/job output Run=7.log")
+        self.assertEqual(metadata["StdErr"], "errors.log")
 
     @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
     def test_resolves_stdout_and_stderr_paths(self, run_mock) -> None:
@@ -224,6 +234,24 @@ class GetJobLogPathTest(unittest.TestCase):
 
 class FollowLogTest(unittest.TestCase):
     """Test clean reporting of failures from the local log follower."""
+
+    @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
+    def test_interrupt_exits_cleanly(self, run_mock) -> None:
+        run_mock.side_effect = KeyboardInterrupt
+        output = StringIO()
+        with self.assertRaises(SystemExit) as context:
+            follow_log_or_exit(Path("/scratch/job.out"), console=Console(file=output))
+        self.assertEqual(context.exception.code, 0)
+        self.assertEqual(output.getvalue(), "")
+
+    @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
+    def test_reports_failed_tail_without_traceback(self, run_mock) -> None:
+        run_mock.side_effect = subprocess.CalledProcessError(1, ["tail"])
+        output = StringIO()
+        with self.assertRaises(SystemExit) as context:
+            follow_log_or_exit(Path("/scratch/job.out"), console=Console(file=output))
+        self.assertEqual(context.exception.code, 1)
+        self.assertIn("tail command failed", output.getvalue())
 
     @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
     def test_reports_missing_tail_without_traceback(self, run_mock) -> None:

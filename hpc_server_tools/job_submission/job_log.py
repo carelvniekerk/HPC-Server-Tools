@@ -1,4 +1,3 @@
-# coding=utf-8
 # --------------------------------------------------------------------------------
 # Project: Hilbert HPC Server Tools
 # Author: Carel van Niekerk
@@ -36,9 +35,114 @@ from rich.table import Table
 from hpc_server_tools.configuration import USER_NAME
 
 SQUEUE_FIELD_SEPARATOR = "\x1f"
-# Slurm metadata keys start with an uppercase letter. Restricting boundaries to
-# that grammar preserves lowercase name=value fragments inside paths.
-SCONTROL_FIELD_PATTERN = re.compile(r"(?:^|\s)([A-Z][A-Za-z0-9_]*)=")
+# Recognize scheduler field names, not arbitrary capitalized path fragments
+# such as "Experiment=42". This is the text-output fallback used on Noctua2;
+# scontrol's unescaped text cannot disambiguate a path containing a *real*
+# scheduler field marker (for example a literal " StdErr=").
+SCONTROL_FIELDS = frozenset(
+    [
+        "JobId",
+        "JobName",
+        "UserId",
+        "GroupId",
+        "MCS_label",
+        "Priority",
+        "Nice",
+        "Account",
+        "QOS",
+        "WCKey",
+        "JobState",
+        "Reason",
+        "Dependency",
+        "Requeue",
+        "Restarts",
+        "BatchFlag",
+        "Reboot",
+        "ExitCode",
+        "DerivedExitCode",
+        "RunTime",
+        "TimeLimit",
+        "TimeMin",
+        "SubmitTime",
+        "EligibleTime",
+        "AccrueTime",
+        "StartTime",
+        "EndTime",
+        "Deadline",
+        "SuspendTime",
+        "SecsPreSuspend",
+        "LastSchedEval",
+        "Scheduler",
+        "Partition",
+        "AllocNode:Sid",
+        "ReqNodeList",
+        "ExcNodeList",
+        "NodeList",
+        "BatchHost",
+        "NumNodes",
+        "NumCPUs",
+        "NumTasks",
+        "CPUs/Task",
+        "ReqB:S:C:T",
+        "ReqTRES",
+        "AllocTRES",
+        "TRES",
+        "Socks/Node",
+        "NtasksPerN:B:S:C",
+        "CoreSpec",
+        "MinCPUsNode",
+        "MinMemoryNode",
+        "MinMemoryCPU",
+        "MinTmpDiskNode",
+        "Features",
+        "DelayBoot",
+        "OverSubscribe",
+        "Contiguous",
+        "Licenses",
+        "Network",
+        "Command",
+        "WorkDir",
+        "StdErr",
+        "StdIn",
+        "StdOut",
+        "Power",
+        "TresPerNode",
+        "TresPerTask",
+        "TresPerJob",
+        "TresPerSocket",
+        "CpusPerTres",
+        "MemPerTres",
+        "MailUser",
+        "MailType",
+        "Reservation",
+        "AdminComment",
+        "Comment",
+        "SystemComment",
+        "BurstBuffer",
+        "BurstBufferState",
+        "ArrayJobId",
+        "ArrayTaskId",
+        "ArrayTaskThrottle",
+        "HetJobId",
+        "HetJobOffset",
+        "Container",
+        "ContainerId",
+        "Profile",
+        "TrackWCKey",
+        "CPU_IDs",
+        "Mem",
+        "GRES",
+        "NtasksPerTRES",
+        "Crontab",
+        "Extra",
+        "Prefer",
+        "SegmentSize",
+        "SubmitLine",
+    ]
+)
+SCONTROL_FIELD_PATTERN = re.compile(
+    r"(?:^|\s)(" + "|".join(re.escape(key) for key in sorted(SCONTROL_FIELDS)) + r")="
+)
 
 
 def get_jobs(username: str) -> list[dict[str, str | int]]:
@@ -146,6 +250,8 @@ def follow_log_or_exit(path: Path, *, console: Console) -> None:
     """Follow a resolved log path or report a local tail failure cleanly."""
     try:
         subprocess.run(["tail", "-F", str(path)], check=True)
+    except KeyboardInterrupt:
+        raise SystemExit(0) from None
     except FileNotFoundError:
         console.print(
             "[bold red]Could not follow the Slurm log: tail is unavailable.[/bold red]"
