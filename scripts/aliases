@@ -34,7 +34,33 @@ alias base='load_python && load_cuda && load_tmux'
 export HPC_TOOLS_PYTHON="${HPC_USER_ROOT}/${USER_NAME}/.usr_tls/.venv/bin/python"
 alias activate="source ${HPC_TOOLS_PATH}/python_environments/activate_venv.sh"
 alias qi-setup="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/get_interactive.py"
-alias qi="source ${HPC_TOOLS_PATH}/job_submission/qi.sh"
+
+# Remove the legacy alias when this file is re-sourced in an existing shell.
+unalias qi 2>/dev/null || true
+
+source "${HPC_TOOLS_PATH}/job_submission/interactive_gpu.sh"
+
+qi() {
+    if [[ $# -eq 0 ]]; then
+        source "${HPC_TOOLS_PATH}/job_submission/qi.sh"
+        return
+    fi
+
+    if [[ $# -eq 1 ]]; then
+        case "$1" in
+            -h|--help|help)
+                qi-help
+                return
+                ;;
+        esac
+    fi
+
+    echo "Error: unsupported qi arguments. Run 'qi --help' for available commands."
+    return 2
+}
+
+alias qi-2-gpu="qi-gpu 2"
+alias qi-4-gpu="qi-gpu 4"
 alias qs="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/resource_stats/resource_check.py"
 alias submit_job="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/submit_job.py"
 alias cleanup_job_logs="${HPC_TOOLS_PYTHON} ${HPC_TOOLS_PATH}/job_submission/cleanup_logs.py"
