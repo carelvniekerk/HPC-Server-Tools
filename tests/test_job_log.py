@@ -103,6 +103,27 @@ class GetJobsTest(unittest.TestCase):
 class GetJobLogPathTest(unittest.TestCase):
     """Test parsing of the paths reported by ``scontrol show job``."""
 
+    @patch("hpc_server_tools.job_submission.job_log.subprocess.run")
+    def test_separates_dependency_policy_from_log_paths(self, run_mock) -> None:
+        """Slurm can append this policy directly after either selected log path."""
+        for field, output in (("StdOut", True), ("StdErr", False)):
+            for policy in ("Yes", "No"):
+                with self.subTest(field=field, policy=policy):
+                    record = (
+                        f"JobId=34517050 {field}=/scratch/logs/job output.log "
+                        f"KillOnInvalidDependent={policy} TresPerNode=gres/gpu:a100:4"
+                    )
+                    run_mock.return_value = subprocess.CompletedProcess(
+                        args=[], returncode=0, stdout=record
+                    )
+                    self.assertEqual(
+                        get_job_log_path("34517050", output=output),
+                        Path("/scratch/logs/job output.log"),
+                    )
+                    self.assertEqual(
+                        parse_scontrol_metadata(record)["KillOnInvalidDependent"], policy
+                    )
+
     def test_preserves_uppercase_field_like_path_fragments(self) -> None:
         metadata = parse_scontrol_metadata(
             "JobId=50 WorkDir=/scratch/project Experiment=42 "

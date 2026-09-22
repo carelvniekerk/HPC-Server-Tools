@@ -54,6 +54,7 @@ SCONTROL_FIELDS = frozenset(
         "JobState",
         "Reason",
         "Dependency",
+        "KillOnInvalidDependent",
         "Requeue",
         "Restarts",
         "BatchFlag",
