@@ -22,7 +22,11 @@ for gpu in 1 2 4; do
     assert_contains "SRUN_ARG=--mem=$((52 * gpu))G"
     assert_contains 'SRUN_ARG=--time=08:00:00'
     assert_contains 'SRUN_ARG=--pty'
-    assert_contains 'SRUN_ARG=--cpus-per-task=2'
+    expected_cpus=$((4 * gpu))
+    if [[ "$gpu" = 1 ]]; then expected_cpus=2; fi
+    assert_contains "SRUN_ARG=--cpus-per-task=$expected_cpus"
+    assert_contains "CPUs=$expected_cpus RAM="
+    assert_contains "SRUN_ARG=--ntasks=1"
     assert_contains 'SRUN_ARG=bash'
     assert_contains 'SRUN_ARG=--login'
     checks=$((checks + 1))
@@ -64,21 +68,51 @@ expect_invalid 1 --mem
 expect_invalid 1 --time
 expect_invalid 1 --mem=
 expect_invalid 1 --time=
+for count in '' 0 -1 1.5 01 +4 four '16 --exclusive' '; touch /tmp/unwanted'; do
+    expect_invalid 4 --cpus "$count"
+done
+expect_invalid 2 --cpus
+expect_invalid 2 --cpus=
+expect_invalid 2 --cpus --mem 160G
 expect_invalid 1 --bogus
 expect_invalid 1 --mem --time 01:00:00
 expect_invalid 1 2
 
+for gpu in 1 2 4; do
+    output=$(qi-gpu "$gpu" --cpus 6)
+    assert_contains 'SRUN_ARG=--cpus-per-task=6'
+    assert_contains 'CPUs=6 RAM='
+    output=$(qi-gpu "$gpu" --cpus=12 --mem=208G --time=02:00:00)
+    assert_contains 'SRUN_ARG=--cpus-per-task=12'
+    assert_contains 'SRUN_ARG=--mem=208G'
+    assert_contains 'SRUN_ARG=--time=02:00:00'
+    checks=$((checks + 2))
+done
+# Fixed-count aliases use the same function; eval permits Bash alias expansion here.
+if [ -n "${BASH_VERSION:-}" ]; then shopt -s expand_aliases; fi
+alias qi-2-gpu='qi-gpu 2'
+alias qi-4-gpu='qi-gpu 4'
+output=$(eval 'qi-2-gpu')
+assert_contains 'SRUN_ARG=--cpus-per-task=8'
+output=$(eval 'qi-4-gpu --cpus 20')
+assert_contains 'SRUN_ARG=--cpus-per-task=20'
+output=$(eval 'qi-4-gpu')
+assert_contains 'SRUN_ARG=--cpus-per-task=16'
+checks=$((checks + 3))
+
 for mode in --help -h help; do
     output=$(qi-gpu "$mode")
     assert_contains '--mem SIZE'
+    assert_contains '--cpus COUNT'
     assert_contains '8 hours'
     case "$output" in *SRUN_ARG=*) echo 'Help submitted a job' >&2; exit 1 ;; esac
-    output=$(qi-gpu 1 --mem 128G "$mode")
+    output=$(qi-gpu 1 --mem 128G --cpus 12 "$mode")
     case "$output" in *SRUN_ARG=*) echo 'Help submitted a job' >&2; exit 1 ;; esac
     checks=$((checks + 1))
 done
 # Options must not leak into the next invocation.
 output=$(qi-gpu 1)
+assert_contains 'SRUN_ARG=--cpus-per-task=2'
 assert_contains 'SRUN_ARG=--mem=52G'
 assert_contains 'SRUN_ARG=--time=08:00:00'
 
