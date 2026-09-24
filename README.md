@@ -45,14 +45,18 @@ On a Noctua2 login node, inside tmux:
 ```bash
 qi-gpu 1 --mem 128G                  # Default: eight hours
 qi-gpu 1 --mem=256G --time=01:00:00
-qi-2-gpu --mem 160G
+qi-2-gpu --mem 160G                  # Eight CPU cores
+qi-4-gpu                            # Sixteen CPU cores
+qi-4-gpu --cpus 24 --time 02:00:00
 qi-gpu --help
 ```
 
 The memory override is total **host RAM per node**, not GPU VRAM or RAM per GPU.
-Defaults remain two CPUs, 52 GiB host RAM per GPU, one production GPU node, and
-eight hours. Options affect only this invocation; plain `qi` keeps its saved
-command. More RAM may increase queue wait. Check placement with `qs` first.
+CPU defaults are **2 / 8 / 16 cores** for **1 / 2 / 4 GPUs**. `--cpus COUNT`
+(or `--cpus=COUNT`) overrides the total CPU cores for the single task, not cores
+per GPU. Other defaults remain 52 GiB host RAM per GPU, one production GPU node,
+and eight hours. Options affect only this invocation; plain `qi` keeps its saved
+command. More CPUs or RAM may increase queue wait. Check placement with `qs` first.
 
 The implementation belongs to this repository at
 `hpc_server_tools/job_submission/interactive_gpu.sh`, sourced by `scripts/aliases`.

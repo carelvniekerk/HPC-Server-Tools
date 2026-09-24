@@ -18,11 +18,13 @@ Options for qi-gpu (also accept --option=value):
   --mem SIZE                 Total host RAM per node, NOT per GPU or GPU VRAM.
                              Positive integer with optional K/M/G/T suffix;
                              no suffix means MiB. Example: --mem 128G.
+  --cpus COUNT               Total CPU cores for the single task. Positive integer.
   --time HH:MM:SS            Positive wall-time limit. Default: 08:00:00 (8 hours).
   -h, --help                 Show help without requesting resources.
 
-Unchanged defaults:
-  partition=gpu, nodes=1, tasks=1, CPUs=2, RAM=52G per GPU, time=8 hours
+Defaults:
+  partition=gpu, nodes=1, tasks=1, RAM=52G per GPU, time=8 hours
+  Default total CPUs: 1 GPU=2, 2 GPUs=8, 4 GPUs=16.
   Default total RAM: 1 GPU=52G, 2 GPUs=104G, 4 GPUs=208G.
   Overrides affect this invocation only; they do not rewrite plain qi's qi.sh.
 
@@ -30,8 +32,9 @@ Examples:
   qi-gpu 1 --mem 128G
   qi-gpu 1 --mem 128G --time 01:00:00
   qi-2-gpu --mem 160G
+  qi-4-gpu --cpus 16 --time 02:00:00
 
-Run qs to inspect GPU placement and RAM headroom first. More RAM may mean a longer wait.
+Run qs to inspect GPU placement and RAM headroom first. More CPUs or RAM may mean a longer wait.
 Start inside tmux on the login node for reconnectability. The helper runs
 srun --pty ... bash --login: a terminal-connected login shell on the compute node.
 Exit that shell to release the allocation; detaching tmux does not release it.
@@ -40,7 +43,7 @@ EOF
 
 qi-gpu() {
     if [[ $# -eq 0 ]]; then
-        echo "Usage: qi-gpu <1|2|4> [--mem SIZE] [--time HH:MM:SS]" >&2
+        echo "Usage: qi-gpu <1|2|4> [--mem SIZE] [--time HH:MM:SS] [--cpus COUNT]" >&2
         return 2
     fi
     case "$1" in
@@ -53,24 +56,36 @@ qi-gpu() {
         *) echo "Error: choose 1, 2, or 4 A100 GPUs on one Noctua2 node." >&2; return 2 ;;
     esac
 
-    local memory="$((52 * num_gpus))G" walltime="08:00:00"
+    local memory="$((52 * num_gpus))G" walltime="08:00:00" cpus="$((4 * num_gpus))"
+    # Keep the lightweight one-GPU default; multi-GPU jobs need more CPU workers.
+    if [[ "$num_gpus" = 1 ]]; then cpus=2; fi
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --mem|--time)
+            --mem|--time|--cpus)
                 if [[ $# -lt 2 ]]; then
                     echo "Error: $1 needs a value. See qi-gpu --help." >&2
                     return 2
                 fi
-                if [[ "$1" = --mem ]]; then memory="$2"; else walltime="$2"; fi
+                case "$1" in
+                    --mem) memory="$2" ;;
+                    --time) walltime="$2" ;;
+                    --cpus) cpus="$2" ;;
+                esac
                 shift 2
                 ;;
             --mem=*) memory="${1#*=}"; shift ;;
             --time=*) walltime="${1#*=}"; shift ;;
+            --cpus=*) cpus="${1#*=}"; shift ;;
             -h|--help|help) qi-help; return ;;
             *) echo "Error: unsupported argument '$1'. See qi-gpu --help." >&2; return 2 ;;
         esac
     done
 
+    local cpu_pattern='^[1-9][0-9]*$'
+    if ! [[ "$cpus" =~ $cpu_pattern ]]; then
+        echo "Error: --cpus needs a positive integer (e.g. 16)." >&2
+        return 2
+    fi
     local memory_pattern='^[1-9][0-9]*[KMGTkmgt]?$'
     local time_pattern='^[0-9]{1,4}:[0-5][0-9]:[0-5][0-9]$'
     local zero_time_pattern='^0+:00:00$'
@@ -85,11 +100,11 @@ qi-gpu() {
 
     echo "Requesting Noctua2 interactive allocation:"
     echo "  job=DevSession-${num_gpus}GPU partition=gpu nodes=1 tasks=1"
-    echo "  GPUs=${num_gpus} x A100 CPUs=2 RAM=${memory} walltime=${walltime}"
+    echo "  GPUs=${num_gpus} x A100 CPUs=${cpus} RAM=${memory} walltime=${walltime}"
     echo "  shell=bash --login (exit the shell to release the allocation)"
     srun --pty \
         --job-name="DevSession-${num_gpus}GPU" \
-        --partition=gpu --nodes=1 --ntasks=1 --cpus-per-task=2 \
+        --partition=gpu --nodes=1 --ntasks=1 --cpus-per-task="$cpus" \
         --mem="$memory" --gres="gpu:a100:${num_gpus}" --time="$walltime" \
         bash --login
 }
